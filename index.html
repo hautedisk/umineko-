@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>収支記録</title>
+
+<style>
+  body { font-family: sans-serif; padding: 10px; }
+  h2, h3 { margin-top: 16px; }
+  input, select, button {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+  button { font-weight: bold; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  th, td {
+    border: 1px solid #ccc;
+    padding: 4px;
+    font-size: 12px;
+    text-align: center;
+  }
+</style>
+</head>
+
+<body>
+
+<h2>うみねこのなく頃に 2 実践記録</h2>
+
+<label>日付</label>
+<input type="date" id="date">
+
+<label>貸し枚数</label>
+<select id="lend">
+  <option value="50">50</option>
+  <option value="49">49</option>
+  <option value="48">48</option>
+  <option value="47">47</option>
+  <option value="46">46</option>
+</select>
+
+<label>払出し枚数</label>
+<select id="pay">
+  <option value="52">52</option>
+  <option value="51.5">51.5</option>
+  <option value="51">51</option>
+  <option value="50">50</option>
+  <option value="49">49</option>
+  <option value="48">48</option>
+  <option value="47">47</option>
+</select>
+
+<label>入金枚数（投入）</label>
+<input type="number" id="inCoins" min="0">
+
+<label>出金枚数（払出）</label>
+<input type="number" id="outCoins" min="0">
+
+<label>回転数</label>
+<input type="number" id="spins" min="0">
+
+<label>ビタ発生回数</label>
+<input type="number" id="vitaTry" min="0">
+
+<label>ビタ成功回数</label>
+<input type="number" id="vitaSuccess" min="0">
+
+<button onclick="add()">記録する</button>
+
+<h3>日別履歴</h3>
+<table>
+<thead>
+<tr>
+  <th>日付</th>
+  <th>投資</th>
+  <th>回収</th>
+  <th>収支</th>
+  <th>回転</th>
+  <th>機械割</th>
+  <th>ビタ率</th>
+  <th>操作</th>
+</tr>
+</thead>
+<tbody id="log"></tbody>
+</table>
+
+<h3>合計</h3>
+<div id="total"></div>
+
+<script>
+/* ---------- 初期設定 ---------- */
+document.getElementById("date").value =
+  new Date().toISOString().split("T")[0];
+
+let data = JSON.parse(localStorage.getItem("data") || "[]");
+let editIndex = null;
+
+/* ---------- 共通 ---------- */
+function yen(n){
+  return n.toLocaleString() + "円";
+}
+
+/* ---------- 記録 ---------- */
+function add(){
+  const date   = dateEl().value;
+  const lend   = +lendEl().value;
+  const pay    = +payEl().value;
+  const inC    = +inCoinsEl().value;
+  const outC   = +outCoinsEl().value;
+  const spins  = +spinsEl().value;
+  const vTry   = +vitaTryEl().value;
+  const vSuc   = +vitaSuccessEl().value;
+
+  if(vSuc > vTry){
+    alert("ビタ成功回数は発生回数以下にしてください");
+    return;
+  }
+
+  const invest = inC / lend * 1000;
+  let collect  = outC / pay * 1000;
+  collect = Math.floor(collect / 500) * 500;
+
+  const diff = collect - invest;
+  const rate = inC ? ((outC / inC) * 100).toFixed(1) : 0;
+  const vitaRate = vTry ? ((vSuc / vTry) * 100).toFixed(1) : 0;
+
+  const record = {
+    date, invest, collect, diff,
+    spins, rate,
+    inCoins: inC,
+    outCoins: outC,
+    vitaTry: vTry,
+    vitaSuccess: vSuc,
+    vitaRate
+  };
+
+  if(editIndex !== null){
+    data[editIndex] = record;
+    editIndex = null;
+  } else {
+    data.push(record);
+  }
+
+  localStorage.setItem("data", JSON.stringify(data));
+  clearInput();
+  render();
+}
+
+/* ---------- 編集・削除 ---------- */
+function edit(i){
+  const d = data[i];
+  dateEl().value = d.date;
+  inCoinsEl().value = d.inCoins;
+  outCoinsEl().value = d.outCoins;
+  spinsEl().value = d.spins;
+  vitaTryEl().value = d.vitaTry;
+  vitaSuccessEl().value = d.vitaSuccess;
+  editIndex = i;
+}
+
+function del(i){
+  if(confirm("削除しますか？")){
+    data.splice(i,1);
+    localStorage.setItem("data", JSON.stringify(data));
+    render();
+  }
+}
+
+function clearInput(){
+  inCoinsEl().value = "";
+  outCoinsEl().value = "";
+  spinsEl().value = "";
+  vitaTryEl().value = "";
+  vitaSuccessEl().value = "";
+}
+
+/* ---------- 表示 ---------- */
+function render(){
+  const log = document.getElementById("log");
+  log.innerHTML = "";
+
+  let totalInvest = 0;
+  let totalCollect = 0;
+  let totalSpins = 0;
+  let totalInCoins = 0;
+  let totalOutCoins = 0;
+  let totalVitaTry = 0;
+  let totalVitaSuccess = 0;
+
+  data.forEach((d,i) => {
+    totalInvest += d.invest;
+    totalCollect += d.collect;
+    totalSpins += d.spins;
+    totalInCoins += d.inCoins;
+    totalOutCoins += d.outCoins;
+    totalVitaTry += d.vitaTry;
+    totalVitaSuccess += d.vitaSuccess;
+
+    log.innerHTML += `
+      <tr>
+        <td>${d.date}</td>
+        <td>${yen(d.invest)}</td>
+        <td>${yen(d.collect)}</td>
+        <td>${yen(d.diff)}</td>
+        <td>${d.spins}</td>
+        <td>${d.rate}%</td>
+        <td>${d.vitaRate}%</td>
+        <td>
+          <button onclick="edit(${i})">編集</button>
+          <button onclick="del(${i})">削除</button>
+        </td>
+      </tr>
+    `;
+  });
+
+  const avgRate = totalInvest
+    ? (totalCollect / totalInvest * 100).toFixed(1)
+    : 0;
+
+  const totalVitaRate = totalVitaTry
+    ? ((totalVitaSuccess / totalVitaTry) * 100).toFixed(1)
+    : 0;
+
+  document.getElementById("total").innerHTML = `
+    総投入枚数：${totalInCoins}枚<br>
+    総払出枚数：${totalOutCoins}枚<br>
+    総投資：${yen(totalInvest)}<br>
+    総回収：${yen(totalCollect)}<br>
+    総収支：${yen(totalCollect - totalInvest)}<br>
+    総回転数：${totalSpins}<br>
+    平均機械割：${avgRate}%<br>
+    累計ビタ率：${totalVitaRate}%<br>
+    （成功 ${totalVitaSuccess} / 発生 ${totalVitaTry}）
+  `;
+}
+
+/* ---------- 要素取得 ---------- */
+const dateEl = ()=>document.getElementById("date");
+const lendEl = ()=>document.getElementById("lend");
+const payEl = ()=>document.getElementById("pay");
+const inCoinsEl = ()=>document.getElementById("inCoins");
+const outCoinsEl = ()=>document.getElementById("outCoins");
+const spinsEl = ()=>document.getElementById("spins");
+const vitaTryEl = ()=>document.getElementById("vitaTry");
+const vitaSuccessEl = ()=>document.getElementById("vitaSuccess");
+
+render();
+</script>
+
+</body>
+</html>
