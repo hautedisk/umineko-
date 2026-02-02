@@ -1,257 +1,254 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>収支記録</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>収支記録 Pro + ビタ管理</title>
+  <style>
+    :root {
+      --primary-color: #4a90e2;
+      --edit-color: #2ecc71;
+      --danger-color: #e74c3c;
+      --bg-color: #f8f9fa;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; background: var(--bg-color); color: #333; line-height: 1.6; }
+    h2, h3 { margin: 20px 0 10px; border-left: 5px solid var(--primary-color); padding-left: 10px; }
+    
+    .card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+    input, select { 
+      width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; 
+      font-size: 16px; box-sizing: border-box;
+    }
+    
+    .btn-group { display: flex; gap: 10px; }
+    button { 
+      width: 100%; padding: 15px; font-size: 18px; font-weight: bold; border: none; border-radius: 4px;
+      background: var(--primary-color); color: white; cursor: pointer; transition: opacity 0.2s;
+    }
+    button:active { opacity: 0.7; }
+    .btn-cancel { background: #95a5a6; }
+    
+    .table-container { overflow-x: auto; background: white; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; min-width: 600px; }
+    th, td { border: 1px solid #eee; padding: 10px; font-size: 12px; text-align: center; }
+    th { background: #eee; }
 
-<style>
-  body { font-family: sans-serif; padding: 10px; }
-  h2, h3 { margin-top: 16px; }
-  input, select, button {
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 8px;
-    font-size: 16px;
-  }
-  button { font-weight: bold; }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-  th, td {
-    border: 1px solid #ccc;
-    padding: 4px;
-    font-size: 12px;
-    text-align: center;
-  }
-</style>
+    #total { background: #333; color: white; padding: 15px; border-radius: 8px; font-weight: bold; }
+    .plus { color: #5eff5e; font-weight: bold; }
+    .minus { color: #ffadad; font-weight: bold; }
+    .vita-rate { font-weight: bold; color: var(--primary-color); }
+    
+    .row { display: flex; gap: 10px; }
+    .row > div { flex: 1; }
+
+    .action-btns { display: flex; gap: 4px; justify-content: center; }
+    .btn-small { width: auto; padding: 5px 8px; font-size: 11px; }
+    .btn-edit { background: var(--edit-color); }
+    .btn-delete { background: var(--danger-color); }
+  </style>
 </head>
 
 <body>
 
-<h2>うみねこのなく頃に 2 実践記録</h2>
+<h2>うみねこ2 実践記録</h2>
 
-<label>日付</label>
-<input type="date" id="date">
+<div class="card" id="inputForm">
+  <input type="hidden" id="editId">
+  <label>日付</label>
+  <input type="date" id="date">
 
-<label>貸し枚数</label>
-<select id="lend">
-  <option value="50">50</option>
-  <option value="49">49</option>
-  <option value="48">48</option>
-  <option value="47">47</option>
-  <option value="46">46</option>
-</select>
+  <div class="row">
+    <div>
+      <label>貸（枚/1k）</label>
+      <select id="lend">
+        <option value="50">50</option><option value="49">49</option><option value="48">48</option><option value="47">47</option><option value="46" selected>46</option>
+      </select>
+    </div>
+    <div>
+      <label>払（枚/1k）</label>
+      <select id="pay">
+        <option value="52">52</option><option value="51.5">51.5</option><option value="51">51</option><option value="50" selected>50</option><option value="49">49</option>
+      </select>
+    </div>
+  </div>
 
-<label>払出し枚数</label>
-<select id="pay">
-  <option value="52">52</option>
-  <option value="51.5">51.5</option>
-  <option value="51">51</option>
-  <option value="50">50</option>
-  <option value="49">49</option>
-  <option value="48">48</option>
-  <option value="47">47</option>
-</select>
+  <div class="row">
+    <div>
+      <label>入金（枚数）</label>
+      <input type="number" id="inCoins" inputmode="numeric" placeholder="0">
+    </div>
+    <div>
+      <label>出金（枚数）</label>
+      <input type="number" id="outCoins" inputmode="numeric" placeholder="0">
+    </div>
+  </div>
 
-<label>入金枚数（投入）</label>
-<input type="number" id="inCoins" min="0">
+  <label>回転数</label>
+  <input type="number" id="spins" inputmode="numeric" placeholder="0">
 
-<label>出金枚数（払出）</label>
-<input type="number" id="outCoins" min="0">
+  <div class="row">
+    <div>
+      <label>ビタ発生</label>
+      <input type="number" id="vitaAtt" inputmode="numeric" placeholder="0">
+    </div>
+    <div>
+      <label>ビタ成功</label>
+      <input type="number" id="vitaSucc" inputmode="numeric" placeholder="0">
+    </div>
+  </div>
 
-<label>回転数</label>
-<input type="number" id="spins" min="0">
+  <div class="btn-group">
+    <button id="submitBtn" onclick="add()">記録する</button>
+    <button id="cancelBtn" class="btn-cancel" onclick="clearForm()" style="display:none;">キャンセル</button>
+  </div>
+</div>
 
-<label>ビタ発生回数</label>
-<input type="number" id="vitaTry" min="0">
-
-<label>ビタ成功回数</label>
-<input type="number" id="vitaSuccess" min="0">
-
-<button onclick="add()">記録する</button>
-
-<h3>日別履歴</h3>
-<table>
-<thead>
-<tr>
-  <th>日付</th>
-  <th>投資</th>
-  <th>回収</th>
-  <th>収支</th>
-  <th>回転</th>
-  <th>機械割</th>
-  <th>ビタ率</th>
-  <th>操作</th>
-</tr>
-</thead>
-<tbody id="log"></tbody>
-</table>
-
-<h3>合計</h3>
+<h3>合計統計</h3>
 <div id="total"></div>
 
+<h3>日別履歴</h3>
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>日付</th>
+        <th>投資(枚/円)</th>
+        <th>回収(枚/円)</th>
+        <th>収支</th>
+        <th>ビタ率</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="log"></tbody>
+  </table>
+</div>
+
 <script>
-/* ---------- 初期設定 ---------- */
-document.getElementById("date").value =
-  new Date().toISOString().split("T")[0];
+  let data = JSON.parse(localStorage.getItem("umi_data_v2") || "[]");
 
-let data = JSON.parse(localStorage.getItem("data") || "[]");
-let editIndex = null;
+  // 初期化
+  document.getElementById("date").value = new Date().toISOString().split("T")[0];
 
-/* ---------- 共通 ---------- */
-function yen(n){
-  return n.toLocaleString() + "円";
-}
+  function yen(n) { return Math.round(n).toLocaleString() + "円"; }
 
-/* ---------- 記録 ---------- */
-function add(){
-  const date   = dateEl().value;
-  const lend   = +lendEl().value;
-  const pay    = +payEl().value;
-  const inC    = +inCoinsEl().value;
-  const outC   = +outCoinsEl().value;
-  const spins  = +spinsEl().value;
-  const vTry   = +vitaTryEl().value;
-  const vSuc   = +vitaSuccessEl().value;
+  function add() {
+    const editId = document.getElementById("editId").value;
+    const date = document.getElementById("date").value;
+    const lend = +document.getElementById("lend").value;
+    const pay = +document.getElementById("pay").value;
+    const inC = +document.getElementById("inCoins").value;
+    const outC = +document.getElementById("outCoins").value;
+    const spins = +document.getElementById("spins").value;
+    const vAtt = +document.getElementById("vitaAtt").value;
+    const vSucc = +document.getElementById("vitaSucc").value;
 
-  if(vSuc > vTry){
-    alert("ビタ成功回数は発生回数以下にしてください");
-    return;
+    if (!inC && !outC) { alert("枚数を入力してください"); return; }
+
+    const investYen = (inC / lend) * 1000;
+    let collectYen = Math.floor(((outC / pay) * 1000) / 500) * 500;
+    const diffYen = collectYen - investYen;
+    const vRate = vAtt > 0 ? ((vSucc / vAtt) * 100).toFixed(1) : "0.0";
+
+    const record = { 
+      id: editId ? Number(editId) : Date.now(), 
+      date, lend, pay, inC, outC, spins, vAtt, vSucc, vRate, investYen, collectYen, diffYen 
+    };
+
+    if (editId) {
+      const index = data.findIndex(d => d.id === Number(editId));
+      data[index] = record;
+    } else {
+      data.push(record);
+    }
+
+    save();
+    clearForm();
   }
 
-  const invest = inC / lend * 1000;
-  let collect  = outC / pay * 1000;
-  collect = Math.floor(collect / 500) * 500;
+  function edit(id) {
+    const item = data.find(d => d.id === id);
+    if (!item) return;
 
-  const diff = collect - invest;
-  const rate = inC ? ((outC / inC) * 100).toFixed(1) : 0;
-  const vitaRate = vTry ? ((vSuc / vTry) * 100).toFixed(1) : 0;
+    document.getElementById("editId").value = item.id;
+    document.getElementById("date").value = item.date;
+    document.getElementById("lend").value = item.lend;
+    document.getElementById("pay").value = item.pay;
+    document.getElementById("inCoins").value = item.inC;
+    document.getElementById("outCoins").value = item.outC;
+    document.getElementById("spins").value = item.spins;
+    document.getElementById("vitaAtt").value = item.vAtt;
+    document.getElementById("vitaSucc").value = item.vSucc;
 
-  const record = {
-    date, invest, collect, diff,
-    spins, rate,
-    inCoins: inC,
-    outCoins: outC,
-    vitaTry: vTry,
-    vitaSuccess: vSuc,
-    vitaRate
-  };
-
-  if(editIndex !== null){
-    data[editIndex] = record;
-    editIndex = null;
-  } else {
-    data.push(record);
+    document.getElementById("submitBtn").innerText = "更新する";
+    document.getElementById("cancelBtn").style.display = "block";
+    window.scrollTo(0, 0);
   }
 
-  localStorage.setItem("data", JSON.stringify(data));
-  clearInput();
-  render();
-}
+  function clearForm() {
+    document.getElementById("editId").value = "";
+    document.getElementById("inCoins").value = "";
+    document.getElementById("outCoins").value = "";
+    document.getElementById("spins").value = "";
+    document.getElementById("vitaAtt").value = "";
+    document.getElementById("vitaSucc").value = "";
+    document.getElementById("submitBtn").innerText = "記録する";
+    document.getElementById("cancelBtn").style.display = "none";
+  }
 
-/* ---------- 編集・削除 ---------- */
-function edit(i){
-  const d = data[i];
-  dateEl().value = d.date;
-  inCoinsEl().value = d.inCoins;
-  outCoinsEl().value = d.outCoins;
-  spinsEl().value = d.spins;
-  vitaTryEl().value = d.vitaTry;
-  vitaSuccessEl().value = d.vitaSuccess;
-  editIndex = i;
-}
+  function remove(id) {
+    if (!confirm("削除しますか？")) return;
+    data = data.filter(d => d.id !== id);
+    save();
+  }
 
-function del(i){
-  if(confirm("削除しますか？")){
-    data.splice(i,1);
-    localStorage.setItem("data", JSON.stringify(data));
+  function save() {
+    localStorage.setItem("umi_data_v2", JSON.stringify(data));
     render();
   }
-}
 
-function clearInput(){
-  inCoinsEl().value = "";
-  outCoinsEl().value = "";
-  spinsEl().value = "";
-  vitaTryEl().value = "";
-  vitaSuccessEl().value = "";
-}
+  function render() {
+    const log = document.getElementById("log");
+    log.innerHTML = "";
+    let tInC = 0, tOutC = 0, tInvY = 0, tColY = 0, tSpins = 0, tVAtt = 0, tVSucc = 0;
 
-/* ---------- 表示 ---------- */
-function render(){
-  const log = document.getElementById("log");
-  log.innerHTML = "";
+    [...data].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(d => {
+      tInC += d.inC; tOutC += d.outC; tInvY += d.investYen; tColY += d.collectYen;
+      tSpins += d.spins; tVAtt += d.vAtt; tVSucc += d.vSucc;
 
-  let totalInvest = 0;
-  let totalCollect = 0;
-  let totalSpins = 0;
-  let totalInCoins = 0;
-  let totalOutCoins = 0;
-  let totalVitaTry = 0;
-  let totalVitaSuccess = 0;
+      const diffClass = d.diffYen > 0 ? 'plus' : (d.diffYen < 0 ? 'minus' : '');
+      
+      log.innerHTML += `
+        <tr>
+          <td>${d.date.slice(5)}</td>
+          <td>${d.inC}<br><small>(${yen(d.investYen)})</small></td>
+          <td>${d.outC}<br><small>(${yen(d.collectYen)})</small></td>
+          <td class="${diffClass}">${yen(d.diffYen)}</td>
+          <td><span class="vita-rate">${d.vRate}%</span><br><small>${d.vSucc}/${d.vAtt}</small></td>
+          <td>
+            <div class="action-btns">
+              <button class="btn-small btn-edit" onclick="edit(${d.id})">編</button>
+              <button class="btn-small btn-delete" onclick="remove(${d.id})">削</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
 
-  data.forEach((d,i) => {
-    totalInvest += d.invest;
-    totalCollect += d.collect;
-    totalSpins += d.spins;
-    totalInCoins += d.inCoins;
-    totalOutCoins += d.outCoins;
-    totalVitaTry += d.vitaTry;
-    totalVitaSuccess += d.vitaSuccess;
+    const tDiff = tColY - tInvY;
+    const tVRate = tVAtt > 0 ? ((tVSucc / tVAtt) * 100).toFixed(1) : "0.0";
 
-    log.innerHTML += `
-      <tr>
-        <td>${d.date}</td>
-        <td>${yen(d.invest)}</td>
-        <td>${yen(d.collect)}</td>
-        <td>${yen(d.diff)}</td>
-        <td>${d.spins}</td>
-        <td>${d.rate}%</td>
-        <td>${d.vitaRate}%</td>
-        <td>
-          <button onclick="edit(${i})">編集</button>
-          <button onclick="del(${i})">削除</button>
-        </td>
-      </tr>
+    document.getElementById("total").innerHTML = `
+      <div>総収支: <span class="${tDiff >= 0 ? 'plus' : 'minus'}">${yen(tDiff)}</span></div>
+      <div style="font-size: 12px; margin-top:5px; font-weight:normal;">
+        枚数: 入 ${tInC.toLocaleString()} / 出 ${tOutC.toLocaleString()}<br>
+        トータルビタ率: <span class="plus">${tVRate}%</span> (${tVSucc}/${tVAtt})<br>
+        累計回転数: ${tSpins.toLocaleString()}
+      </div>
     `;
-  });
+  }
 
-  const avgRate = totalInvest
-    ? (totalCollect / totalInvest * 100).toFixed(1)
-    : 0;
-
-  const totalVitaRate = totalVitaTry
-    ? ((totalVitaSuccess / totalVitaTry) * 100).toFixed(1)
-    : 0;
-
-  document.getElementById("total").innerHTML = `
-    総投入枚数：${totalInCoins}枚<br>
-    総払出枚数：${totalOutCoins}枚<br>
-    総投資：${yen(totalInvest)}<br>
-    総回収：${yen(totalCollect)}<br>
-    総収支：${yen(totalCollect - totalInvest)}<br>
-    総回転数：${totalSpins}<br>
-    平均機械割：${avgRate}%<br>
-    累計ビタ率：${totalVitaRate}%<br>
-    （成功 ${totalVitaSuccess} / 発生 ${totalVitaTry}）
-  `;
-}
-
-/* ---------- 要素取得 ---------- */
-const dateEl = ()=>document.getElementById("date");
-const lendEl = ()=>document.getElementById("lend");
-const payEl = ()=>document.getElementById("pay");
-const inCoinsEl = ()=>document.getElementById("inCoins");
-const outCoinsEl = ()=>document.getElementById("outCoins");
-const spinsEl = ()=>document.getElementById("spins");
-const vitaTryEl = ()=>document.getElementById("vitaTry");
-const vitaSuccessEl = ()=>document.getElementById("vitaSuccess");
-
-render();
+  render();
 </script>
-
 </body>
 </html>
