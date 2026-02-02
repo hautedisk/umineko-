@@ -10,24 +10,24 @@
     h2 { font-size: 18px; margin: 10px 0; color: #333; }
     .card { background: white; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 12px; }
     
-    /* 入力エリアをコンパクトに */
+    /* 入力エリア */
     .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
     .item { display: flex; flex-direction: column; }
-    label { font-size: 11px; color: #666; font-weight: bold; margin-bottom: 2px; }
-    input, select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; }
+    label { font-size: 10px; color: #666; font-weight: bold; margin-bottom: 2px; text-align: center; }
+    input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; text-align: center; }
     
     button { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; background: var(--p); color: white; }
     .btn-edit-mode { background: var(--s); }
 
     /* 合計表示 */
     #total { background: #333; color: white; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-    .total-main { grid-column: 1 / 3; font-size: 20px; border-bottom: 1px solid #555; padding-bottom: 5px; }
+    .total-main { grid-column: 1 / 3; font-size: 20px; border-bottom: 1px solid #555; padding-bottom: 5px; text-align: center; }
 
-    /* 履歴をリスト形式に（横長回避） */
+    /* 履歴リスト */
     .log-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; }
     .log-item:last-child { border: 0; }
-    .log-left { flex: 1; }
-    .log-right { text-align: right; flex: 1; }
+    .log-left { flex: 1.2; }
+    .log-right { text-align: right; flex: 0.8; }
     .date { font-size: 11px; color: #888; }
     .val { font-weight: bold; font-size: 15px; }
     .sub { font-size: 11px; color: #666; }
@@ -35,7 +35,7 @@
     .minus { color: var(--d); }
     
     .actions { display: flex; gap: 5px; margin-top: 5px; justify-content: flex-end; }
-    .btn-s { padding: 4px 10px; font-size: 11px; border-radius: 4px; color: white; text-decoration: none; display: inline-block; }
+    .btn-s { padding: 4px 10px; font-size: 11px; border-radius: 4px; color: white; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -54,12 +54,12 @@
       <input type="date" id="date">
     </div>
     <div class="item">
-      <label>貸レート</label>
-      <select id="lend"><option value="46">46</option><option value="50">50</option></select>
+      <label>貸(枚/1k)</label>
+      <input type="number" id="lend" inputmode="decimal" placeholder="46">
     </div>
     <div class="item">
-      <label>払レート</label>
-      <select id="pay"><option value="50">50</option><option value="52">52</option></select>
+      <label>払(枚/1k)</label>
+      <input type="number" id="pay" inputmode="decimal" placeholder="50">
     </div>
     <div class="item">
       <label>回転数</label>
@@ -74,7 +74,7 @@
       <input type="number" id="outC" inputmode="numeric" placeholder="0">
     </div>
     <div class="item">
-      <label>成功/発生</label>
+      <label>成功 / 発生</label>
       <div style="display:flex; gap:2px;">
         <input type="number" id="vSucc" inputmode="numeric" placeholder="成">
         <input type="number" id="vAtt" inputmode="numeric" placeholder="発">
@@ -88,16 +88,25 @@
 <div class="card" id="logList"></div>
 
 <script>
-  let data = JSON.parse(localStorage.getItem("umi_v3") || "[]");
+  let data = JSON.parse(localStorage.getItem("umi_v4") || "[]");
+  
+  // 初期値セット
   document.getElementById("date").value = new Date().toISOString().split("T")[0];
+  document.getElementById("lend").value = "46";
+  document.getElementById("pay").value = "50";
 
   function add() {
     const id = document.getElementById("editId").value;
+    const lVal = +document.getElementById("lend").value;
+    const pVal = +document.getElementById("pay").value;
+    
+    if (!lVal || !pVal) { alert("貸・払レートを入力してください"); return; }
+
     const d = {
       id: id ? Number(id) : Date.now(),
       date: document.getElementById("date").value,
-      lend: +document.getElementById("lend").value,
-      pay: +document.getElementById("pay").value,
+      lend: lVal,
+      pay: pVal,
       inC: +document.getElementById("inC").value,
       outC: +document.getElementById("outC").value,
       spins: +document.getElementById("spins").value,
@@ -112,7 +121,7 @@
       data.push(d);
     }
     
-    localStorage.setItem("umi_v3", JSON.stringify(data));
+    localStorage.setItem("umi_v4", JSON.stringify(data));
     resetForm();
     render();
   }
@@ -144,7 +153,7 @@
   function remove(id) {
     if(confirm("削除しますか？")) {
       data = data.filter(x => x.id !== id);
-      localStorage.setItem("umi_v3", JSON.stringify(data));
+      localStorage.setItem("umi_v4", JSON.stringify(data));
       render();
     }
   }
@@ -155,6 +164,7 @@
     let tInvY = 0, tColY = 0, tInC = 0, tOutC = 0, tAtt = 0, tSucc = 0;
 
     data.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
+      // レート計算
       const invY = (x.inC / x.lend) * 1000;
       const colY = Math.floor(((x.outC / x.pay) * 1000) / 500) * 500;
       const diff = colY - invY;
@@ -165,12 +175,12 @@
       list.innerHTML += `
         <div class="log-item">
           <div class="log-left">
-            <div class="date">${x.date}</div>
-            <div class="val ${diff >= 0 ? 'plus' : 'minus'}">${diff.toLocaleString()}円</div>
+            <div class="date">${x.date} <span style="margin-left:5px; color:#aaa;">(${x.lend}→${x.pay})</span></div>
+            <div class="val ${diff >= 0 ? 'plus' : 'minus'}">${Math.round(diff).toLocaleString()}円</div>
             <div class="sub">枚数: In ${x.inC} / Out ${x.outC}</div>
           </div>
           <div class="log-right">
-            <div class="sub">ビタ成功率</div>
+            <div class="sub">成功率</div>
             <div class="val" style="color:var(--p)">${rate}%</div>
             <div class="actions">
               <span class="btn-s" style="background:var(--s)" onclick="edit(${x.id})">編集</span>
@@ -182,9 +192,9 @@
     });
 
     const totalDiff = tColY - tInvY;
-    document.getElementById("totalDiff").innerText = totalDiff.toLocaleString() + "円";
+    document.getElementById("totalDiff").innerText = Math.round(totalDiff).toLocaleString() + "円";
     document.getElementById("totalDiff").className = "total-main " + (totalDiff >= 0 ? "plus" : "minus");
-    document.getElementById("totalCoins").innerText = `枚数: 入 ${tInC} / 出 ${tOutC}`;
+    document.getElementById("totalCoins").innerText = `枚数: 入 ${tInC.toLocaleString()} / 出 ${tOutC.toLocaleString()}`;
     document.getElementById("totalVita").innerText = `ビタ: ${tAtt > 0 ? (tSucc/tAtt*100).toFixed(1) : 0}% (${tSucc}/${tAtt})`;
   }
 
