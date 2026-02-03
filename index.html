@@ -148,7 +148,7 @@
     window.scrollTo(0,0);
   }
 
-  function remove(id) { if(confirm("消去？")) { data = data.filter(x => x.id !== id); localStorage.setItem("umi_v14", JSON.stringify(data)); render(); } }
+  function remove(id) { if(confirm("ほんとうに消しちゃっていいのですか？にぱ〜☆")) { data = data.filter(x => x.id !== id); localStorage.setItem("umi_v14", JSON.stringify(data)); render(); } }
 
   function render() {
     const list = document.getElementById("logList");
