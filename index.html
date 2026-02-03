@@ -3,53 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>うみねこ2 収支・ビタ管理</title>
+  <title>うみねこ2 収支管理</title>
   <style>
     :root { --p: #4a90e2; --s: #2ecc71; --d: #e74c3c; --bg: #f0f2f5; }
     body { font-family: sans-serif; padding: 10px; background: var(--bg); margin: 0; font-size: 14px; }
-    h3 { margin: 15px 0 8px; font-size: 16px; color: #444; }
     .card { background: white; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 12px; }
     
-    /* 入力グリッド */
+    /* 入力エリア */
     .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
     .item { display: flex; flex-direction: column; }
     label { font-size: 10px; color: #666; font-weight: bold; margin-bottom: 2px; text-align: center; }
     input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; text-align: center; }
     
-    button { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; background: var(--p); color: white; cursor: pointer; }
-    .btn-edit-mode { background: var(--s); }
+    /* 切替ボタン */
+    .toggle-group { display: flex; background: #eee; border-radius: 6px; padding: 2px; margin-bottom: 5px; }
+    .toggle-btn { flex: 1; border: none; background: none; font-size: 10px; padding: 4px; border-radius: 4px; cursor: pointer; color: #666; }
+    .toggle-btn.active { background: white; color: var(--p); font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-    /* 合計表示の強化 */
+    button.main-btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; background: var(--p); color: white; cursor: pointer; }
+    .btn-edit-mode { background: var(--s) !important; }
+
+    /* 合計表示 */
     #total { background: #333; color: white; text-align: center; padding: 15px; }
-    .total-title { font-size: 11px; color: #aaa; margin-bottom: 2px; }
-    .total-val { font-size: 24px; font-weight: bold; margin-bottom: 8px; }
-    .total-sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px solid #555; padding-top: 8px; font-size: 12px; }
+    .total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .total-box { display: flex; flex-direction: column; }
+    .total-label { font-size: 10px; color: #aaa; }
+    .total-val { font-size: 20px; font-weight: bold; }
+    .total-sub { font-size: 11px; color: #888; border-top: 1px solid #444; margin-top: 8px; padding-top: 8px; grid-column: span 2; }
 
-    /* 履歴リスト */
-    .log-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 12px 0; }
-    .log-item:last-child { border: 0; }
+    /* 履歴 */
+    .log-item { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding: 10px 0; }
     .log-left { flex: 1.2; }
     .log-right { text-align: right; flex: 0.8; }
-    .date { font-size: 11px; color: #888; margin-bottom: 2px; }
-    .val { font-weight: bold; font-size: 16px; }
+    .date { font-size: 11px; color: #888; }
+    .val { font-weight: bold; font-size: 15px; }
     .sub { font-size: 11px; color: #666; }
     .plus { color: var(--s); }
     .minus { color: var(--d); }
-    
-    .actions { display: flex; gap: 5px; margin-top: 6px; justify-content: flex-end; }
-    .btn-s { padding: 4px 10px; font-size: 11px; border-radius: 4px; color: white; cursor: pointer; border: none; }
+    .actions { display: flex; gap: 5px; margin-top: 5px; justify-content: flex-end; }
+    .btn-s { padding: 4px 8px; font-size: 10px; border-radius: 4px; color: white; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
 
 <div id="total" class="card">
-  <div class="total-title">累計収支 / 総差枚数</div>
-  <div id="totalDiff" class="total-val">---円</div>
-  <div id="totalDiffCoins" class="total-val" style="font-size: 20px; color: #ffcc00;">---枚</div>
-  
-  <div class="total-sub-grid">
-    <div>ビタ: <span id="totalVita">--%</span></div>
-    <div>回転数: <span id="totalSpins">--</span></div>
+  <div class="total-grid">
+    <div class="total-box">
+      <span class="total-label">累計収支</span>
+      <span id="totalYen" class="total-val">---円</span>
+    </div>
+    <div class="total-box">
+      <span class="total-label">総差枚数</span>
+      <span id="totalCoins" class="total-val">---枚</span>
+    </div>
+    <div class="total-sub">
+      ビタ率: <span id="totalVita" style="color:white">--%</span> / 累計回転: <span id="totalSpins" style="color:white">--</span>
+    </div>
   </div>
 </div>
 
@@ -72,84 +81,109 @@
       <label>回転数</label>
       <input type="number" id="spins" inputmode="numeric" placeholder="0">
     </div>
-    <div class="item">
-      <label>入金(枚)</label>
-      <input type="number" id="inC" inputmode="numeric" placeholder="0">
+    
+    <div class="item" style="grid-column: span 1.5;">
+      <div class="toggle-group">
+        <button id="modeInC" class="toggle-btn active" onclick="setInMode('C')">枚数入力</button>
+        <button id="modeInY" class="toggle-btn" onclick="setInMode('Y')">金額入力</button>
+      </div>
+      <input type="number" id="inValue" inputmode="numeric" placeholder="投資">
     </div>
+
     <div class="item">
-      <label>出金(枚)</label>
-      <input type="number" id="outC" inputmode="numeric" placeholder="0">
+      <label>出金(枚数)</label>
+      <div style="height: 23px;"></div><input type="number" id="outC" inputmode="numeric" placeholder="0">
     </div>
-    <div class="item">
-      <label>成功 / 発生</label>
+
+    <div class="item" style="grid-column: span 1;">
+      <label>ビタ成功 / 発生</label>
       <div style="display:flex; gap:2px;">
         <input type="number" id="vSucc" inputmode="numeric" placeholder="成">
         <input type="number" id="vAtt" inputmode="numeric" placeholder="発">
       </div>
     </div>
   </div>
-  <button id="submitBtn" onclick="add()">記録を保存</button>
+  <button id="submitBtn" class="main-btn" onclick="add()">記録を保存</button>
 </div>
 
 <h3>履歴</h3>
 <div class="card" id="logList"></div>
 
 <script>
-  // 保存キーを固定（過去のバージョンも考慮して読み込み）
-  const STORAGE_KEY = "umi_final_data";
-  let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem("umi_v5") || localStorage.getItem("umi_v4") || "[]");
+  let data = JSON.parse(localStorage.getItem("umi_v6") || "[]");
+  let inMode = 'C'; // 'C' = Coins, 'Y' = Yen
 
-  // 初期設定
   document.getElementById("date").value = new Date().toISOString().split("T")[0];
+
+  function setInMode(mode) {
+    inMode = mode;
+    document.getElementById("modeInC").classList.toggle("active", mode === 'C');
+    document.getElementById("modeInY").classList.toggle("active", mode === 'Y');
+    document.getElementById("inValue").placeholder = mode === 'C' ? "枚数" : "円";
+  }
 
   function add() {
     const id = document.getElementById("editId").value;
     const lVal = parseFloat(document.getElementById("lend").value);
     const pVal = parseFloat(document.getElementById("pay").value);
+    const inVal = parseFloat(document.getElementById("inValue").value) || 0;
     
-    if (!lVal || !pVal) { alert("レートを入力してください"); return; }
+    let inCoins = 0;
+    let investYen = 0;
+
+    if (inMode === 'C') {
+      inCoins = inVal;
+      investYen = (inCoins / lVal) * 1000;
+    } else {
+      investYen = inVal;
+      inCoins = (investYen / 1000) * lVal;
+    }
+
+    const outCoins = parseFloat(document.getElementById("outC").value) || 0;
+    // 回収計算（500円単位切り捨て）
+    let collectYen = (outCoins / pVal) * 1000;
+    collectYen = Math.floor(collectYen / 500) * 500;
 
     const record = {
       id: id ? Number(id) : Date.now(),
       date: document.getElementById("date").value,
-      lend: lVal,
-      pay: pVal,
-      inC: Number(document.getElementById("inC").value) || 0,
-      outC: Number(document.getElementById("outC").value) || 0,
+      lend: lVal, pay: pVal,
+      inC: inCoins, 
+      investYen: investYen,
+      outC: outCoins,
+      collectYen: collectYen,
       spins: Number(document.getElementById("spins").value) || 0,
       vAtt: Number(document.getElementById("vAtt").value) || 0,
       vSucc: Number(document.getElementById("vSucc").value) || 0,
+      inMode: inMode // モードを保存（編集用）
     };
-    
+
     if (id) {
       const idx = data.findIndex(x => x.id === Number(id));
-      if (idx !== -1) data[idx] = record;
+      data[idx] = record;
     } else {
       data.push(record);
     }
-    
-    saveAndRender();
-    resetForm();
-  }
 
-  function saveAndRender() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem("umi_v6", JSON.stringify(data));
+    resetForm();
     render();
   }
 
   function edit(id) {
-    const item = data.find(x => x.id === id);
-    if (!item) return;
-    document.getElementById("editId").value = item.id;
-    document.getElementById("date").value = item.date;
-    document.getElementById("lend").value = item.lend;
-    document.getElementById("pay").value = item.pay;
-    document.getElementById("inC").value = item.inC;
-    document.getElementById("outC").value = item.outC;
-    document.getElementById("spins").value = item.spins;
-    document.getElementById("vAtt").value = item.vAtt;
-    document.getElementById("vSucc").value = item.vSucc;
+    const x = data.find(x => x.id === id);
+    document.getElementById("editId").value = x.id;
+    document.getElementById("date").value = x.date;
+    document.getElementById("lend").value = x.lend;
+    document.getElementById("pay").value = x.pay;
+    document.getElementById("spins").value = x.spins;
+    document.getElementById("outC").value = x.outC;
+    document.getElementById("vAtt").value = x.vAtt;
+    document.getElementById("vSucc").value = x.vSucc;
     
+    setInMode(x.inMode || 'C');
+    document.getElementById("inValue").value = x.inMode === 'Y' ? x.investYen : x.inC;
+
     document.getElementById("submitBtn").innerText = "修正を反映";
     document.getElementById("submitBtn").classList.add("btn-edit-mode");
     window.scrollTo(0,0);
@@ -157,49 +191,41 @@
 
   function resetForm() {
     document.getElementById("editId").value = "";
-    ["inC", "outC", "spins", "vAtt", "vSucc"].forEach(id => document.getElementById(id).value = "");
+    ["inValue", "outC", "spins", "vAtt", "vSucc"].forEach(i => document.getElementById(i).value = "");
     document.getElementById("submitBtn").innerText = "記録を保存";
     document.getElementById("submitBtn").classList.remove("btn-edit-mode");
   }
 
   function remove(id) {
-    if(confirm("この記録を削除しますか？")) {
+    if(confirm("削除しますか？")) {
       data = data.filter(x => x.id !== id);
-      saveAndRender();
+      localStorage.setItem("umi_v6", JSON.stringify(data));
+      render();
     }
   }
 
   function render() {
     const list = document.getElementById("logList");
     list.innerHTML = "";
-    
-    let tInvY = 0, tColY = 0, tSpins = 0, tAtt = 0, tSucc = 0, tDiffC = 0;
+    let tYen = 0, tCoins = 0, tSpins = 0, tAtt = 0, tSucc = 0;
 
-    // 日付順に並び替え
     data.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
-      // 投資金額 (1000円単位の端数はそのまま)
-      const invY = (x.inC / x.lend) * 1000;
-      
-      // 回収金額 (500円単位で切り捨て)
-      const rawColY = (x.outC / x.pay) * 1000;
-      const colY = Math.floor(rawColY / 500) * 500; 
-
-      const diffY = colY - invY;
+      const diffY = x.collectYen - x.investYen;
       const diffC = x.outC - x.inC;
       const vRate = x.vAtt > 0 ? ((x.vSucc / x.vAtt) * 100).toFixed(1) : "0.0";
       
-      tInvY += invY; tColY += colY; tSpins += x.spins; tAtt += x.vAtt; tSucc += x.vSucc; tDiffC += diffC;
+      tYen += diffY; tCoins += diffC; tSpins += x.spins; tAtt += x.vAtt; tSucc += x.vSucc;
 
       list.innerHTML += `
         <div class="log-item">
           <div class="log-left">
             <div class="date">${x.date} <span style="color:#aaa;">(${x.lend}→${x.pay})</span></div>
             <div class="val ${diffY >= 0 ? 'plus' : 'minus'}">${Math.round(diffY).toLocaleString()}円</div>
-            <div class="sub">差枚: <span class="${diffC >= 0 ? 'plus' : 'minus'}">${diffC > 0 ? '+' : ''}${diffC}枚</span></div>
+            <div class="sub">差枚: <span class="${diffC >= 0 ? 'plus' : 'minus'}">${diffC > 0 ? '+' : ''}${Math.round(diffC)}枚</span></div>
           </div>
           <div class="log-right">
-            <div class="sub">ビタ率</div>
-            <div class="val" style="color:var(--p)">${vRate}%</div>
+            <div class="sub">ビタ ${vRate}%</div>
+            <div class="val" style="color:var(--p); font-size:12px;">${x.vSucc}/${x.vAtt}</div>
             <div class="actions">
               <button class="btn-s" style="background:var(--s)" onclick="edit(${x.id})">編集</button>
               <button class="btn-s" style="background:var(--d)" onclick="remove(${x.id})">削除</button>
@@ -209,19 +235,14 @@
       `;
     });
 
-    // 合計エリアの更新
-    const totalDiffY = tColY - tInvY;
-    document.getElementById("totalDiff").innerText = Math.round(totalDiffY).toLocaleString() + "円";
-    document.getElementById("totalDiff").className = "total-val " + (totalDiffY >= 0 ? "plus" : "minus");
-    
-    document.getElementById("totalDiffCoins").innerText = (tDiffC > 0 ? "+" : "") + tDiffC.toLocaleString() + "枚";
-    document.getElementById("totalDiffCoins").className = "total-val " + (tDiffC >= 0 ? "plus" : "minus");
-
-    document.getElementById("totalSpins").innerText = tSpins.toLocaleString() + " G";
+    document.getElementById("totalYen").innerText = Math.round(tYen).toLocaleString() + "円";
+    document.getElementById("totalYen").className = "total-val " + (tYen >= 0 ? "plus" : "minus");
+    document.getElementById("totalCoins").innerText = (tCoins >= 0 ? "+" : "") + Math.round(tCoins).toLocaleString() + "枚";
+    document.getElementById("totalCoins").className = "total-val " + (tCoins >= 0 ? "plus" : "minus");
+    document.getElementById("totalSpins").innerText = tSpins.toLocaleString() + "G";
     document.getElementById("totalVita").innerText = (tAtt > 0 ? (tSucc/tAtt*100).toFixed(1) : 0) + "%";
   }
 
-  // 初回表示
   render();
 </script>
 </body>
