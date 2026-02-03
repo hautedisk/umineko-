@@ -50,7 +50,6 @@
     .actions { display: flex; gap: 5px; margin-top: 5px; justify-content: flex-end; }
     .btn-s { padding: 4px 8px; font-size: 10px; border-radius: 4px; color: white; border: none; cursor: pointer; }
 
-    /* --- 自作ポップアップのCSS --- */
     #customDialog {
       display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;
@@ -59,14 +58,9 @@
       background: white; width: 85%; padding: 24px; border-radius: 16px; text-align: center;
       box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
-    #dialogMsg {
-      font-size: 24px; /* 削除メッセージの大きさ */
-      font-weight: bold; color: #333; margin-bottom: 24px; line-height: 1.4;
-    }
+    #dialogMsg { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 24px; line-height: 1.4; }
     .dialog-btns { display: flex; gap: 12px; }
-    .dialog-btns button { 
-      flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 15px; font-weight: bold; cursor: pointer;
-    }
+    .dialog-btns button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 15px; font-weight: bold; }
     .btn-cancel { background: #eee; color: #666; }
     .btn-delete { background: var(--d); color: white; }
   </style>
@@ -134,10 +128,34 @@
     const p = parseFloat(document.getElementById("pay").value);
     const inVal = parseFloat(document.getElementById("inV").value) || 0;
     const outC = parseFloat(document.getElementById("outV").value) || 0;
+    
     let inC = inM === 'C' ? inVal : (inVal / 1000) * l;
     let inY = inM === 'Y' ? inVal : (inVal / l) * 1000;
-    let outY_final = (outM === 'SAVE') ? (outC / p) * 1000 : Math.floor((outC / p) * 1000 / 500) * 500;
-    const rec = { id: id ? Number(id) : Date.now(), date: document.getElementById("date").value, lend: l, pay: p, inC, inY, outC, outY: outY_final, outM, inM, spins: Number(document.getElementById("spins").value) || 0, vA: Number(document.getElementById("vA").value) || 0, vS: Number(document.getElementById("vS").value) || 0 };
+    
+    let extraCoins = outC % p; 
+    let outY_raw = (outC / p) * 1000;
+    let outY_final = 0, saveBC = 0, saveBY = 0, lostBC = 0, lostBY = 0;
+    
+    if (outM === 'SAVE') { 
+      outY_final = outY_raw; 
+      saveBC = extraCoins; 
+      saveBY = (extraCoins / p) * 1000; 
+    } else { 
+      outY_final = Math.floor(outY_raw / 500) * 500; 
+      lostBC = extraCoins; 
+      lostBY = outY_raw - outY_final; 
+    }
+    
+    const rec = { 
+      id: id ? Number(id) : Date.now(), 
+      date: document.getElementById("date").value, 
+      lend: l, pay: p, inC, inY, outC, 
+      outY: outY_final, saveBC, saveBY, lostBC, lostBY, outM, inM, 
+      spins: Number(document.getElementById("spins").value) || 0, 
+      vA: Number(document.getElementById("vA").value) || 0, 
+      vS: Number(document.getElementById("vS").value) || 0 
+    };
+    
     if (id) { data[data.findIndex(x => x.id === Number(id))] = rec; } else { data.push(rec); }
     localStorage.setItem("umi_v15", JSON.stringify(data));
     location.reload();
@@ -157,30 +175,19 @@
     window.scrollTo(0,0);
   }
 
-  // --- 削除ポップアップ制御 ---
   let deleteId = null;
   function remove(id) {
     deleteId = id;
     const msgList = [
-      ["ならお前が死ねぇ！", 6],
-      ["…嘘だッ！！！", 2],
-      ["嫌な事件だったね…", 50],
-      ["なわけねぇだろぉ", 5],
-      ["制圧しろぉ！", 15],
-      ["再悪回避", 14],
-      ["うーうーうー", 4],
-      ["あぅあぅ、消しちゃうのですか？", 3],
+      ["ならお前が死ねぇ！", 6], ["…嘘だッ！！！", 2], ["嫌な事件だったね…", 50],
+      ["なわけねぇだろぉ", 5], ["制圧しろぉ！", 15], ["再悪回避", 14],
+      ["うーうーうー", 4], ["あぅあぅ、消しちゃうのですか？", 3],
       ["【激アツ】消去確定なのですよ。にぱ〜〜☆☆", 1]
     ];
     const totalWeight = msgList.reduce((sum, item) => sum + item[1], 0);
     let randomNum = Math.random() * totalWeight;
     let selectedMsg = "";
-    for (const [msg, weight] of msgList) {
-      if (randomNum < weight) { selectedMsg = msg; break; }
-      randomNum -= weight;
-    }
-    
-    // 自作ダイアログを表示
+    for (const [msg, weight] of msgList) { if (randomNum < weight) { selectedMsg = msg; break; } randomNum -= weight; }
     document.getElementById("dialogMsg").innerText = selectedMsg;
     document.getElementById("customDialog").style.display = "flex";
     document.getElementById("confirmDeleteBtn").onclick = () => {
@@ -195,10 +202,18 @@
     const list = document.getElementById("logList");
     list.innerHTML = "";
     let tY_raw = 0, tC = 0, tSp = 0, tA = 0, tS = 0, tSaveY = 0, tLostY = 0, tSaveC = 0, tLostC = 0;
+    
     data.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
       const dY_500 = Math.floor((x.outY - x.inY) / 500) * 500;
       const dC = x.outC - x.inC;
       tY_raw += (x.outY - x.inY); tC += dC; tSp += x.spins; tA += x.vA; tS += x.vS;
+      
+      // 損得の集計を復活
+      tSaveY += (x.saveBY || 0); 
+      tLostY += (x.lostBY || 0); 
+      tSaveC += (x.saveBC || 0); 
+      tLostC += (x.lostBC || 0);
+      
       const rate = x.vA > 0 ? ((x.vS / x.vA) * 100).toFixed(1) : "0.0";
       const tag = x.outM === 'SAVE' ? '<span class="tag tag-save">貯メ</span>' : '<span class="tag tag-cash">換金</span>';
       list.innerHTML += `<div class="card log-item">
@@ -206,10 +221,18 @@
           <div style="text-align:right"><div class="sub">ビタ ${rate}%</div><div class="actions"><button class="btn-s" style="background:var(--s)" onclick="edit(${x.id})">編集</button><button class="btn-s" style="background:var(--d)" onclick="remove(${x.id})">削除</button></div></div>
         </div>`;
     });
+    
     const tY_final = Math.floor(tY_raw / 500) * 500;
     document.getElementById("totalYen").innerText = tY_final.toLocaleString() + "円";
     document.getElementById("totalYen").className = "total-val " + (tY_final >= 0 ? "plus" : "minus");
     document.getElementById("totalCoins").innerText = (tC >= 0 ? "+" : "") + Math.round(tC).toLocaleString() + "枚";
+    
+    // 画面への反映を復活
+    document.getElementById("saveYen").innerText = Math.round(tSaveY).toLocaleString() + "円";
+    document.getElementById("saveCoin").innerText = tSaveC + "枚";
+    document.getElementById("lostYen").innerText = Math.round(tLostY).toLocaleString() + "円";
+    document.getElementById("lostCoin").innerText = tLostC + "枚";
+    
     document.getElementById("totalSpins").innerText = tSp.toLocaleString();
     document.getElementById("totalVita").innerText = (tA > 0 ? (tS/tA*100).toFixed(1) : 0) + "%";
   }
