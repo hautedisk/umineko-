@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>うみねこ2 収支・損得管理</title>
   <link rel="apple-touch-icon" href="https://amusement-japan.co.jp/img/upload/20251202_1764661445.jpg">
   <link rel="icon" href="https://amusement-japan.co.jp/img/upload/20251202_1764661445.jpg">
@@ -115,7 +116,10 @@
 </div>
 
 <script>
-  let data = JSON.parse(localStorage.getItem("umi_v15") || "[]");
+  // --- 設定 ---
+  const STORAGE_KEY = "umi_v15"; // キーをここで一括管理
+  
+  let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
   let inM = 'C', outM = 'CASH';
   document.getElementById("date").value = new Date().toISOString().split("T")[0];
 
@@ -157,7 +161,7 @@
     };
     
     if (id) { data[data.findIndex(x => x.id === Number(id))] = rec; } else { data.push(rec); }
-    localStorage.setItem("umi_v15", JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     location.reload();
   }
 
@@ -188,11 +192,12 @@
     let randomNum = Math.random() * totalWeight;
     let selectedMsg = "";
     for (const [msg, weight] of msgList) { if (randomNum < weight) { selectedMsg = msg; break; } randomNum -= weight; }
+    
     document.getElementById("dialogMsg").innerText = selectedMsg;
     document.getElementById("customDialog").style.display = "flex";
     document.getElementById("confirmDeleteBtn").onclick = () => {
       data = data.filter(x => x.id !== deleteId);
-      localStorage.setItem("umi_v15", JSON.stringify(data));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       location.reload();
     };
   }
@@ -208,7 +213,6 @@
       const dC = x.outC - x.inC;
       tY_raw += (x.outY - x.inY); tC += dC; tSp += x.spins; tA += x.vA; tS += x.vS;
       
-      // 損得の集計を復活
       tSaveY += (x.saveBY || 0); 
       tLostY += (x.lostBY || 0); 
       tSaveC += (x.saveBC || 0); 
@@ -227,7 +231,6 @@
     document.getElementById("totalYen").className = "total-val " + (tY_final >= 0 ? "plus" : "minus");
     document.getElementById("totalCoins").innerText = (tC >= 0 ? "+" : "") + Math.round(tC).toLocaleString() + "枚";
     
-    // 画面への反映を復活
     document.getElementById("saveYen").innerText = Math.round(tSaveY).toLocaleString() + "円";
     document.getElementById("saveCoin").innerText = tSaveC + "枚";
     document.getElementById("lostYen").innerText = Math.round(tLostY).toLocaleString() + "円";
