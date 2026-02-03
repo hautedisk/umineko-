@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>うみねこ2 収支・損得管理</title>
+  <title>うみねこ2 収支管理</title>
   <style>
     :root { --p: #4a90e2; --s: #2ecc71; --d: #e74c3c; --bg: #f0f2f5; --gold: #d4af37; }
     body { font-family: sans-serif; padding: 8px; background: var(--bg); margin: 0; font-size: 13px; }
@@ -16,18 +16,20 @@
     .total-label { font-size: 9px; color: #aaa; margin-bottom: 2px; }
     .total-val { font-size: 18px; font-weight: bold; }
     
-    /* 損得エリア */
     .benefit-area { border-top: 1px solid #444; margin-top: 10px; padding-top: 10px; text-align: left; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .b-item { font-size: 10px; line-height: 1.3; }
     .t-gold { color: var(--gold); font-weight: bold; }
     .t-red { color: #ff6b6b; font-weight: bold; }
 
-    /* 入力エリア */
-    .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
-    .item { display: flex; flex-direction: column; justify-content: flex-end; }
-    label { font-size: 9px; color: #666; font-weight: bold; margin-bottom: 3px; text-align: center; }
-    input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; text-align: center; height: 36px; }
+    /* 入力エリアの調整 */
+    .grid { display: grid; grid-template-columns: 1.2fr 0.9fr 0.9fr; gap: 6px; margin-bottom: 8px; }
+    .item { display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
+    label { font-size: 9px; color: #666; font-weight: bold; margin-bottom: 3px; text-align: center; white-space: nowrap; }
+    input { padding: 6px 4px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; width: 100%; box-sizing: border-box; text-align: center; height: 36px; }
     
+    /* 日付入力欄を少しコンパクトに */
+    input[type="date"] { font-size: 11px; padding: 6px 2px; }
+
     .toggle-group { display: flex; background: #eee; border-radius: 6px; padding: 2px; margin-bottom: 3px; height: 20px; }
     .toggle-btn { flex: 1; border: none; background: none; font-size: 9px; cursor: pointer; color: #666; height: 100%; border-radius: 4px; }
     .toggle-btn.active { background: white; color: var(--p); font-weight: bold; }
@@ -61,14 +63,14 @@
 
   <div class="benefit-area">
     <div class="b-item">
-      <div class="t-gold">貯メ得 (端数防衛)</div>
-      <div id="saveYen">0円</div>
-      <div id="saveCoin" style="color:#aaa">0.0枚</div>
+      <div class="t-gold">貯メダルによる得 </div>
+      <div id="saveYen">0円分</div>
+      <div id="saveCoin" style="color:#aaa">0枚</div>
     </div>
     <div class="b-item">
-      <div class="t-red">換金損 (切り捨て)</div>
-      <div id="lostYen">0円</div>
-      <div id="lostCoin" style="color:#aaa">0.0枚</div>
+      <div class="t-red">換金による損 </div>
+      <div id="lostYen">0円分</div>
+      <div id="lostCoin" style="color:#aaa">0枚</div>
     </div>
   </div>
   
@@ -113,7 +115,7 @@
 <div class="card" id="logList"></div>
 
 <script>
-  let data = JSON.parse(localStorage.getItem("umi_v10") || "[]");
+  let data = JSON.parse(localStorage.getItem("umi_v12") || "[]");
   let inM = 'C', outM = 'CASH';
 
   document.getElementById("date").value = new Date().toISOString().split("T")[0];
@@ -131,21 +133,29 @@
     let inC = inM === 'C' ? inVal : (inVal / 1000) * l;
     let inY = inM === 'Y' ? inVal : (inVal / l) * 1000;
     
-    let rawY = (outC / p) * 1000;
-    let outY = 0, saveB = 0, lostB = 0;
+    let extraCoins = outC % p; 
+    let outY_raw = (outC / p) * 1000;
+    let outY_final = 0;
+    let saveBenefitY = 0, lostBenefitY = 0;
+    let saveBenefitC = 0, lostBenefitC = 0;
 
     if (outM === 'SAVE') {
-      outY = rawY; // 貯メダルは満額評価
-      saveB = rawY - (Math.floor(rawY / 500) * 500); 
+      outY_final = outY_raw; 
+      saveBenefitC = extraCoins;
+      saveBenefitY = (extraCoins / p) * 1000;
     } else {
-      outY = Math.floor(rawY / 500) * 500; // 換金は500円切り捨て
-      lostB = rawY - outY; 
+      outY_final = Math.floor(outY_raw / 500) * 500;
+      lostBenefitC = extraCoins;
+      lostBenefitY = outY_raw - outY_final;
     }
 
     const rec = {
       id: id ? Number(id) : Date.now(),
       date: document.getElementById("date").value, lend: l, pay: p,
-      inC, inY, outC, outY, saveB, lostB, outM, inM,
+      inC, inY, outC, outY: outY_final, 
+      saveBC: saveBenefitC, saveBY: saveBenefitY,
+      lostBC: lostBenefitC, lostBY: lostBenefitY,
+      outM, inM,
       spins: Number(document.getElementById("spins").value) || 0,
       vA: Number(document.getElementById("vA").value) || 0,
       vS: Number(document.getElementById("vS").value) || 0
@@ -154,7 +164,7 @@
     if (id) { const i = data.findIndex(x => x.id === Number(id)); data[i] = rec; }
     else { data.push(rec); }
 
-    localStorage.setItem("umi_v10", JSON.stringify(data));
+    localStorage.setItem("umi_v12", JSON.stringify(data));
     location.reload();
   }
 
@@ -175,52 +185,38 @@
     window.scrollTo(0,0);
   }
 
-  function remove(id) { if(confirm("消去？")) { data = data.filter(x => x.id !== id); localStorage.setItem("umi_v10", JSON.stringify(data)); render(); } }
+  function remove(id) { if(confirm("消去？")) { data = data.filter(x => x.id !== id); localStorage.setItem("umi_v12", JSON.stringify(data)); render(); } }
 
   function render() {
     const list = document.getElementById("logList");
     list.innerHTML = "";
-    let tY_raw = 0, tC = 0, tSp = 0, tA = 0, tS = 0, tSaveY = 0, tLostY = 0;
+    let tY_raw = 0, tC = 0, tSp = 0, tA = 0, tS = 0, tSaveY = 0, tLostY = 0, tSaveC = 0, tLostC = 0;
 
     data.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
       const dY = x.outY - x.inY;
       const dC = x.outC - x.inC;
       tY_raw += dY; tC += dC; tSp += x.spins; tA += x.vA; tS += x.vS;
-      tSaveY += (x.saveB || 0); tLostY += (x.lostB || 0);
+      tSaveY += (x.saveBY || 0); tLostY += (x.lostBY || 0);
+      tSaveC += (x.saveBC || 0); tLostC += (x.lostBC || 0);
 
       const rate = x.vA > 0 ? ((x.vS / x.vA) * 100).toFixed(1) : "0.0";
       const tag = x.outM === 'SAVE' ? '<span class="tag tag-save">貯メ</span>' : '<span class="tag tag-cash">換金</span>';
 
-      list.innerHTML += `
-        <div class="log-item">
-          <div>
-            <div class="date">${x.date}${tag}</div>
-            <div class="val ${dY >= 0 ? 'plus' : 'minus'}">${Math.round(dY).toLocaleString()}円</div>
-            <div class="sub">差枚: ${Math.round(dC).toLocaleString()}枚</div>
-          </div>
-          <div style="text-align:right">
-            <div class="sub">ビタ ${rate}%</div>
-            <div class="actions">
-              <button class="btn-s" style="background:var(--s)" onclick="edit(${x.id})">編集</button>
-              <button class="btn-s" style="background:var(--d)" onclick="remove(${x.id})">削除</button>
-            </div>
-          </div>
+      list.innerHTML += `<div class="log-item">
+          <div><div class="date">${x.date}${tag}</div><div class="val ${dY >= 0 ? 'plus' : 'minus'}">${Math.round(dY).toLocaleString()}円</div><div class="sub">差枚: ${Math.round(dC).toLocaleString()}枚</div></div>
+          <div style="text-align:right"><div class="sub">ビタ ${rate}%</div><div class="actions"><button class="btn-s" style="background:var(--s)" onclick="edit(${x.id})">編集</button><button class="btn-s" style="background:var(--d)" onclick="remove(${x.id})">削除</button></div></div>
         </div>`;
     });
 
-    // 累計収支を500円単位で切り捨て表示（財布の中身ベース）
     const tY_final = Math.floor(tY_raw / 500) * 500;
     document.getElementById("totalYen").innerText = tY_final.toLocaleString() + "円";
     document.getElementById("totalYen").className = "total-val " + (tY_final >= 0 ? "plus" : "minus");
-    
     document.getElementById("totalCoins").innerText = (tC >= 0 ? "+" : "") + Math.round(tC).toLocaleString() + "枚";
-    document.getElementById("totalCoins").className = "total-val " + (tC >= 0 ? "plus" : "minus");
     
-    // 損得（端数）は刻まず詳細に
     document.getElementById("saveYen").innerText = Math.round(tSaveY).toLocaleString() + "円";
-    document.getElementById("saveCoin").innerText = (tSaveY / (data[0]?.pay || 50)).toFixed(1) + "枚";
+    document.getElementById("saveCoin").innerText = tSaveC + "枚";
     document.getElementById("lostYen").innerText = Math.round(tLostY).toLocaleString() + "円";
-    document.getElementById("lostCoin").innerText = (tLostY / (data[0]?.pay || 50)).toFixed(1) + "枚";
+    document.getElementById("lostCoin").innerText = tLostC + "枚";
     
     document.getElementById("totalSpins").innerText = tSp.toLocaleString();
     document.getElementById("totalVita").innerText = (tA > 0 ? (tS/tA*100).toFixed(1) : 0) + "%";
