@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>うみねこ2 収支管理</title>
+  <title>うみねこ2 収支・損得管理</title>
   <style>
     :root { --p: #4a90e2; --s: #2ecc71; --d: #e74c3c; --bg: #f0f2f5; --gold: #d4af37; }
     body { font-family: sans-serif; padding: 8px; background: var(--bg); margin: 0; font-size: 13px; }
@@ -12,8 +12,8 @@
     /* 合計表示 */
     #total { background: #333; color: white; text-align: center; padding: 12px; }
     .total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .total-box { display: flex; flex-direction: column; border: 1px solid #444; padding: 5px; border-radius: 8px; }
-    .total-label { font-size: 9px; color: #aaa; margin-bottom: 2px; }
+    .total-box { border: 1px solid #444; padding: 5px; border-radius: 8px; }
+    .total-label { font-size: 9px; color: #aaa; margin-bottom: 2px; display: block; }
     .total-val { font-size: 18px; font-weight: bold; }
     
     .benefit-area { border-top: 1px solid #444; margin-top: 10px; padding-top: 10px; text-align: left; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -21,15 +21,13 @@
     .t-gold { color: var(--gold); font-weight: bold; }
     .t-red { color: #ff6b6b; font-weight: bold; }
 
-    /* 入力エリアの調整 */
-    .grid { display: grid; grid-template-columns: 1.2fr 0.9fr 0.9fr; gap: 6px; margin-bottom: 8px; }
-    .item { display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; }
-    label { font-size: 9px; color: #666; font-weight: bold; margin-bottom: 3px; text-align: center; white-space: nowrap; }
-    input { padding: 6px 4px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; width: 100%; box-sizing: border-box; text-align: center; height: 36px; }
+    /* 入力エリア：レイアウト変更 */
+    .grid-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+    .full-row { margin-bottom: 8px; }
+    .item { display: flex; flex-direction: column; justify-content: flex-end; }
+    label { font-size: 9px; color: #666; font-weight: bold; margin-bottom: 3px; text-align: center; }
+    input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; text-align: center; height: 36px; }
     
-    /* 日付入力欄を少しコンパクトに */
-    input[type="date"] { font-size: 11px; padding: 6px 2px; }
-
     .toggle-group { display: flex; background: #eee; border-radius: 6px; padding: 2px; margin-bottom: 3px; height: 20px; }
     .toggle-btn { flex: 1; border: none; background: none; font-size: 9px; cursor: pointer; color: #666; height: 100%; border-radius: 4px; }
     .toggle-btn.active { background: white; color: var(--p); font-weight: bold; }
@@ -37,14 +35,17 @@
     button.main-btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; background: var(--p); color: white; cursor: pointer; }
     .btn-edit-mode { background: var(--s) !important; }
 
-    .log-item { border-bottom: 1px solid #eee; padding: 8px 0; display: flex; justify-content: space-between; align-items: center; }
-    .date { font-size: 9px; color: #999; }
-    .val { font-weight: bold; font-size: 14px; }
+    .log-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+    .date { font-size: 10px; color: #999; }
+    .val { font-weight: bold; font-size: 15px; }
+    .sub { font-size: 11px; color: #666; }
     .plus { color: var(--s); }
     .minus { color: var(--d); }
-    .tag { font-size: 8px; padding: 1px 3px; border-radius: 3px; margin-left: 3px; color: white; }
+    .tag { font-size: 8px; padding: 1px 4px; border-radius: 3px; margin-left: 4px; color: white; vertical-align: middle; }
     .tag-save { background: var(--gold); }
     .tag-cash { background: #888; }
+    .actions { display: flex; gap: 5px; margin-top: 5px; justify-content: flex-end; }
+    .btn-s { padding: 4px 8px; font-size: 10px; border-radius: 4px; color: white; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -52,7 +53,7 @@
 <div id="total" class="card">
   <div class="total-grid">
     <div class="total-box">
-      <span class="total-label">累計収支(500刻み)</span>
+      <span class="total-label">累計収支</span>
       <span id="totalYen" class="total-val">---円</span>
     </div>
     <div class="total-box">
@@ -63,29 +64,37 @@
 
   <div class="benefit-area">
     <div class="b-item">
-      <div class="t-gold">貯メダルによる得 </div>
-      <div id="saveYen">0円分</div>
+      <div class="t-gold">貯メ得 (端数残存)</div>
+      <div id="saveYen">0円</div>
       <div id="saveCoin" style="color:#aaa">0枚</div>
     </div>
     <div class="b-item">
-      <div class="t-red">換金による損 </div>
-      <div id="lostYen">0円分</div>
+      <div class="t-red">換金損 (端数消滅)</div>
+      <div id="lostYen">0円</div>
       <div id="lostCoin" style="color:#aaa">0枚</div>
     </div>
   </div>
   
-  <div style="font-size:10px; color:#888; margin-top:8px; border-top:1px solid #444; padding-top:5px;">
+  <div style="font-size:10px; color:#888; margin-top:10px; border-top:1px solid #444; padding-top:5px;">
     ビタ率: <span id="totalVita" style="color:#fff">--%</span> / 回転: <span id="totalSpins" style="color:#fff">--</span>
   </div>
 </div>
 
 <div class="card">
   <input type="hidden" id="editId">
-  <div class="grid">
-    <div class="item"><label>日付</label><input type="date" id="date"></div>
+  
+  <div class="full-row item">
+    <label>日付</label>
+    <input type="date" id="date">
+  </div>
+
+  <div class="grid-row">
     <div class="item"><label>貸</label><input type="number" id="lend" value="46"></div>
     <div class="item"><label>払</label><input type="number" id="pay" value="50"></div>
-    
+    <div class="item"><label>回転数</label><input type="number" id="spins" placeholder="0"></div>
+  </div>
+
+  <div class="grid-row">
     <div class="item">
       <div class="toggle-group">
         <button id="mInC" class="toggle-btn active" onclick="setIn('C')">枚数</button>
@@ -100,12 +109,13 @@
       </div>
       <input type="number" id="outV" placeholder="回収枚数">
     </div>
-    <div class="item"><label>回転数</label><input type="number" id="spins" placeholder="0"></div>
-  </div>
-  
-  <div class="grid" style="grid-template-columns: 1fr 1fr; margin-top:-5px;">
-    <div class="item"><label>ビタ成功</label><input type="number" id="vS" placeholder="成功"></div>
-    <div class="item"><label>ビタ発生</label><input type="number" id="vA" placeholder="発生"></div>
+    <div class="item" style="grid-column: span 1;">
+      <label>ビタ成/発</label>
+      <div style="display:flex; gap:2px;">
+        <input type="number" id="vS" placeholder="成">
+        <input type="number" id="vA" placeholder="発">
+      </div>
+    </div>
   </div>
   
   <button id="submitBtn" class="main-btn" onclick="add()">記録を保存</button>
@@ -115,7 +125,7 @@
 <div class="card" id="logList"></div>
 
 <script>
-  let data = JSON.parse(localStorage.getItem("umi_v12") || "[]");
+  let data = JSON.parse(localStorage.getItem("umi_v13") || "[]");
   let inM = 'C', outM = 'CASH';
 
   document.getElementById("date").value = new Date().toISOString().split("T")[0];
@@ -164,7 +174,7 @@
     if (id) { const i = data.findIndex(x => x.id === Number(id)); data[i] = rec; }
     else { data.push(rec); }
 
-    localStorage.setItem("umi_v12", JSON.stringify(data));
+    localStorage.setItem("umi_v13", JSON.stringify(data));
     location.reload();
   }
 
@@ -185,7 +195,7 @@
     window.scrollTo(0,0);
   }
 
-  function remove(id) { if(confirm("消去？")) { data = data.filter(x => x.id !== id); localStorage.setItem("umi_v12", JSON.stringify(data)); render(); } }
+  function remove(id) { if(confirm("消去？")) { data = data.filter(x => x.id !== id); localStorage.setItem("umi_v13", JSON.stringify(data)); render(); } }
 
   function render() {
     const list = document.getElementById("logList");
@@ -193,9 +203,13 @@
     let tY_raw = 0, tC = 0, tSp = 0, tA = 0, tS = 0, tSaveY = 0, tLostY = 0, tSaveC = 0, tLostC = 0;
 
     data.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
-      const dY = x.outY - x.inY;
+      // 履歴も500円単位で表示（財布ベース）
+      const dY_raw = x.outY - x.inY;
+      const dY_500 = Math.floor(dY_raw / 500) * 500;
       const dC = x.outC - x.inC;
-      tY_raw += dY; tC += dC; tSp += x.spins; tA += x.vA; tS += x.vS;
+      
+      tY_raw += (x.outY - x.inY);
+      tC += dC; tSp += x.spins; tA += x.vA; tS += x.vS;
       tSaveY += (x.saveBY || 0); tLostY += (x.lostBY || 0);
       tSaveC += (x.saveBC || 0); tLostC += (x.lostBC || 0);
 
@@ -203,8 +217,18 @@
       const tag = x.outM === 'SAVE' ? '<span class="tag tag-save">貯メ</span>' : '<span class="tag tag-cash">換金</span>';
 
       list.innerHTML += `<div class="log-item">
-          <div><div class="date">${x.date}${tag}</div><div class="val ${dY >= 0 ? 'plus' : 'minus'}">${Math.round(dY).toLocaleString()}円</div><div class="sub">差枚: ${Math.round(dC).toLocaleString()}枚</div></div>
-          <div style="text-align:right"><div class="sub">ビタ ${rate}%</div><div class="actions"><button class="btn-s" style="background:var(--s)" onclick="edit(${x.id})">編集</button><button class="btn-s" style="background:var(--d)" onclick="remove(${x.id})">削除</button></div></div>
+          <div>
+            <div class="date">${x.date}${tag}</div>
+            <div class="val ${dY_500 >= 0 ? 'plus' : 'minus'}">${dY_500.toLocaleString()}円</div>
+            <div class="sub">差枚: ${Math.round(dC).toLocaleString()}枚</div>
+          </div>
+          <div style="text-align:right">
+            <div class="sub">ビタ ${rate}%</div>
+            <div class="actions">
+              <button class="btn-s" style="background:var(--s)" onclick="edit(${x.id})">編集</button>
+              <button class="btn-s" style="background:var(--d)" onclick="remove(${x.id})">削除</button>
+            </div>
+          </div>
         </div>`;
     });
 
