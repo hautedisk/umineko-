@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>うみねこ2 収支・損得管理</title>
   <link rel="apple-touch-icon" href="https://amusement-japan.co.jp/img/upload/20251202_1764661445.jpg">
-　<link rel="icon" href="https://amusement-japan.co.jp/img/upload/20251202_1764661445.jpg">
+  <link rel="icon" href="https://amusement-japan.co.jp/img/upload/20251202_1764661445.jpg">
   <style>
     :root { --p: #4a90e2; --s: #2ecc71; --d: #e74c3c; --bg: #f0f2f5; --gold: #d4af37; }
-    body { font-family: sans-serif; padding: 8px; background: var(--bg); margin: 0; font-size: 13px; }
+    body { font-family: sans-serif; padding: 8px; background: var(--bg); margin: 0; font-size: 13px; -webkit-tap-highlight-color: transparent; }
     .card { background: white; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 10px; box-sizing: border-box; }
     
-    /* 合計表示 */
     #total { background: #333; color: white; text-align: center; padding: 12px; }
     .total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .total-box { border: 1px solid #444; padding: 5px; border-radius: 8px; }
@@ -23,7 +23,6 @@
     .t-gold { color: var(--gold); font-weight: bold; }
     .t-red { color: #ff6b6b; font-weight: bold; }
 
-    /* 入力エリア */
     .grid-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
     .item { display: flex; flex-direction: column; justify-content: flex-end; }
     label { font-size: 9px; color: #666; font-weight: bold; margin-bottom: 3px; text-align: center; }
@@ -39,14 +38,7 @@
     button.main-btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; background: var(--p); color: white; cursor: pointer; }
     .btn-edit-mode { background: var(--s) !important; }
 
-    /* 履歴欄の調整：左右のパディングを12pxに確保 */
-    .log-item { 
-      padding: 12px; 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-      box-sizing: border-box;
-    }
+    .log-item { padding: 12px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
     .date-text { font-size: 10px; color: #999; }
     .val { font-weight: bold; font-size: 15px; }
     .sub { font-size: 11px; color: #666; }
@@ -57,6 +49,26 @@
     .tag-cash { background: #888; }
     .actions { display: flex; gap: 5px; margin-top: 5px; justify-content: flex-end; }
     .btn-s { padding: 4px 8px; font-size: 10px; border-radius: 4px; color: white; border: none; cursor: pointer; }
+
+    /* --- 自作ポップアップのCSS --- */
+    #customDialog {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center;
+    }
+    .dialog-card {
+      background: white; width: 85%; padding: 24px; border-radius: 16px; text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    #dialogMsg {
+      font-size: 24px; /* 削除メッセージの大きさ */
+      font-weight: bold; color: #333; margin-bottom: 24px; line-height: 1.4;
+    }
+    .dialog-btns { display: flex; gap: 12px; }
+    .dialog-btns button { 
+      flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 15px; font-weight: bold; cursor: pointer;
+    }
+    .btn-cancel { background: #eee; color: #666; }
+    .btn-delete { background: var(--d); color: white; }
   </style>
 </head>
 <body>
@@ -75,46 +87,38 @@
 
 <div class="card">
   <input type="hidden" id="editId">
-  
-  <div class="date-row">
-    <label>日付</label><br>
-    <input type="date" id="date">
-  </div>
-
+  <div class="date-row"><label>日付</label><br><input type="date" id="date"></div>
   <div class="grid-row">
     <div class="item"><label>貸</label><input type="number" id="lend" value="46"></div>
     <div class="item"><label>払</label><input type="number" id="pay" value="50"></div>
     <div class="item"><label>回転数</label><input type="number" id="spins" placeholder="0"></div>
   </div>
-
   <div class="grid-row">
     <div class="item">
-      <div class="toggle-group">
-        <button id="mInC" class="toggle-btn active" onclick="setIn('C')">枚数</button>
-        <button id="mInY" class="toggle-btn" onclick="setIn('Y')">金額</button>
-      </div>
+      <div class="toggle-group"><button id="mInC" class="toggle-btn active" onclick="setIn('C')">枚数</button><button id="mInY" class="toggle-btn" onclick="setIn('Y')">金額</button></div>
       <input type="number" id="inV" placeholder="投資">
     </div>
     <div class="item">
-      <div class="toggle-group">
-        <button id="mOutCash" class="toggle-btn active" onclick="setOut('CASH')">換金</button>
-        <button id="mOutSave" class="toggle-btn" onclick="setOut('SAVE')">貯メ</button>
-      </div>
+      <div class="toggle-group"><button id="mOutCash" class="toggle-btn active" onclick="setOut('CASH')">換金</button><button id="mOutSave" class="toggle-btn" onclick="setOut('SAVE')">貯メ</button></div>
       <input type="number" id="outV" placeholder="回収枚数">
     </div>
-    <div class="item">
-      <label>ビタ成功/発生</label>
-      <div style="display:flex; gap:2px;">
-        <input type="number" id="vS" placeholder="成"><input type="number" id="vA" placeholder="発">
-      </div>
-    </div>
+    <div class="item"><label>ビタ成功/発生</label><div style="display:flex; gap:2px;"><input type="number" id="vS" placeholder="成"><input type="number" id="vA" placeholder="発"></div></div>
   </div>
-  
   <button id="submitBtn" class="main-btn" onclick="add()">記録を保存</button>
 </div>
 
 <h3>履歴</h3>
 <div id="logList"></div>
+
+<div id="customDialog">
+  <div class="dialog-card">
+    <div id="dialogMsg"></div>
+    <div class="dialog-btns">
+      <button class="btn-cancel" onclick="closeDialog()">やめる</button>
+      <button id="confirmDeleteBtn" class="btn-delete">削除する</button>
+    </div>
+  </div>
+</div>
 
 <script>
   let data = JSON.parse(localStorage.getItem("umi_v15") || "[]");
@@ -130,26 +134,10 @@
     const p = parseFloat(document.getElementById("pay").value);
     const inVal = parseFloat(document.getElementById("inV").value) || 0;
     const outC = parseFloat(document.getElementById("outV").value) || 0;
-    
     let inC = inM === 'C' ? inVal : (inVal / 1000) * l;
     let inY = inM === 'Y' ? inVal : (inVal / l) * 1000;
-    
-    let extraCoins = outC % p; 
-    let outY_raw = (outC / p) * 1000;
-    let outY_final = 0, saveBC = 0, saveBY = 0, lostBC = 0, lostBY = 0;
-    
-    if (outM === 'SAVE') { 
-      outY_final = outY_raw; 
-      saveBC = extraCoins; 
-      saveBY = (extraCoins / p) * 1000; 
-    } else { 
-      outY_final = Math.floor(outY_raw / 500) * 500; 
-      lostBC = extraCoins; 
-      lostBY = outY_raw - outY_final; 
-    }
-    
-    const rec = { id: id ? Number(id) : Date.now(), date: document.getElementById("date").value, lend: l, pay: p, inC, inY, outC, outY: outY_final, saveBC, saveBY, lostBC, lostBY, outM, inM, spins: Number(document.getElementById("spins").value) || 0, vA: Number(document.getElementById("vA").value) || 0, vS: Number(document.getElementById("vS").value) || 0 };
-    
+    let outY_final = (outM === 'SAVE') ? (outC / p) * 1000 : Math.floor((outC / p) * 1000 / 500) * 500;
+    const rec = { id: id ? Number(id) : Date.now(), date: document.getElementById("date").value, lend: l, pay: p, inC, inY, outC, outY: outY_final, outM, inM, spins: Number(document.getElementById("spins").value) || 0, vA: Number(document.getElementById("vA").value) || 0, vS: Number(document.getElementById("vS").value) || 0 };
     if (id) { data[data.findIndex(x => x.id === Number(id))] = rec; } else { data.push(rec); }
     localStorage.setItem("umi_v15", JSON.stringify(data));
     location.reload();
@@ -169,10 +157,12 @@
     window.scrollTo(0,0);
   }
 
+  // --- 削除ポップアップ制御 ---
+  let deleteId = null;
   function remove(id) {
-    // [メッセージ, 重み] のリスト（数値が大きいほど出やすい）
+    deleteId = id;
     const msgList = [
-      ["ならお前が死ねぇ！", 6], // 50%でこれが出る
+      ["ならお前が死ねぇ！", 6],
       ["…嘘だッ！！！", 2],
       ["嫌な事件だったね…", 50],
       ["なわけねぇだろぉ", 5],
@@ -180,58 +170,46 @@
       ["再悪回避", 14],
       ["うーうーうー", 4],
       ["あぅあぅ、消しちゃうのですか？", 3],
-      ["【激アツ】消去確定なのですよ。にぱ〜〜☆☆", 1] // レア演出
+      ["【激アツ】消去確定なのですよ。にぱ〜〜☆☆", 1]
     ];
-
-    // 重みに基づいたランダム選択ロジック
     const totalWeight = msgList.reduce((sum, item) => sum + item[1], 0);
     let randomNum = Math.random() * totalWeight;
     let selectedMsg = "";
-
     for (const [msg, weight] of msgList) {
-      if (randomNum < weight) {
-        selectedMsg = msg;
-        break;
-      }
+      if (randomNum < weight) { selectedMsg = msg; break; }
       randomNum -= weight;
     }
-
-    if(confirm(selectedMsg)) { 
-      data = data.filter(x => x.id !== id); 
-      localStorage.setItem("umi_v17", JSON.stringify(data)); 
-      render(); 
-    } 
+    
+    // 自作ダイアログを表示
+    document.getElementById("dialogMsg").innerText = selectedMsg;
+    document.getElementById("customDialog").style.display = "flex";
+    document.getElementById("confirmDeleteBtn").onclick = () => {
+      data = data.filter(x => x.id !== deleteId);
+      localStorage.setItem("umi_v15", JSON.stringify(data));
+      location.reload();
+    };
   }
+  function closeDialog() { document.getElementById("customDialog").style.display = "none"; }
 
   function render() {
     const list = document.getElementById("logList");
     list.innerHTML = "";
     let tY_raw = 0, tC = 0, tSp = 0, tA = 0, tS = 0, tSaveY = 0, tLostY = 0, tSaveC = 0, tLostC = 0;
-    
     data.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(x => {
-      // 履歴も500円刻みで計算
       const dY_500 = Math.floor((x.outY - x.inY) / 500) * 500;
       const dC = x.outC - x.inC;
       tY_raw += (x.outY - x.inY); tC += dC; tSp += x.spins; tA += x.vA; tS += x.vS;
-      tSaveY += (x.saveBY || 0); tLostY += (x.lostBY || 0); tSaveC += (x.saveBC || 0); tLostC += (x.lostBC || 0);
-      
       const rate = x.vA > 0 ? ((x.vS / x.vA) * 100).toFixed(1) : "0.0";
       const tag = x.outM === 'SAVE' ? '<span class="tag tag-save">貯メ</span>' : '<span class="tag tag-cash">換金</span>';
-      
       list.innerHTML += `<div class="card log-item">
           <div><div class="date-text">${x.date}${tag}</div><div class="val ${dY_500 >= 0 ? 'plus' : 'minus'}">${dY_500.toLocaleString()}円</div><div class="sub">差枚: ${Math.round(dC).toLocaleString()}枚</div></div>
           <div style="text-align:right"><div class="sub">ビタ ${rate}%</div><div class="actions"><button class="btn-s" style="background:var(--s)" onclick="edit(${x.id})">編集</button><button class="btn-s" style="background:var(--d)" onclick="remove(${x.id})">削除</button></div></div>
         </div>`;
     });
-    
     const tY_final = Math.floor(tY_raw / 500) * 500;
     document.getElementById("totalYen").innerText = tY_final.toLocaleString() + "円";
     document.getElementById("totalYen").className = "total-val " + (tY_final >= 0 ? "plus" : "minus");
     document.getElementById("totalCoins").innerText = (tC >= 0 ? "+" : "") + Math.round(tC).toLocaleString() + "枚";
-    document.getElementById("saveYen").innerText = Math.round(tSaveY).toLocaleString() + "円";
-    document.getElementById("saveCoin").innerText = tSaveC + "枚";
-    document.getElementById("lostYen").innerText = Math.round(tLostY).toLocaleString() + "円";
-    document.getElementById("lostCoin").innerText = tLostC + "枚";
     document.getElementById("totalSpins").innerText = tSp.toLocaleString();
     document.getElementById("totalVita").innerText = (tA > 0 ? (tS/tA*100).toFixed(1) : 0) + "%";
   }
