@@ -169,7 +169,39 @@
     window.scrollTo(0,0);
   }
 
-  function remove(id) { if(confirm("本当に消してしまってもいいのですか？にぱ〜☆")) { data = data.filter(x => x.id !== id); localStorage.setItem("umi_v15", JSON.stringify(data)); render(); } }
+  function remove(id) {
+    // [メッセージ, 重み] のリスト（数値が大きいほど出やすい）
+    const msgList = [
+      ["ならお前が死ねぇ！", 6], // 50%でこれが出る
+      ["…嘘だッ！！！", 2],
+      ["嫌な事件だったね…", 50],
+      ["なわけねぇだろぉ", 5],
+      ["制圧しろぉ！", 15],
+      ["再悪回避", 14],
+      ["うーうーうー", 4],
+      ["あぅあぅ、消しちゃうのですか？", 3],
+      ["【激アツ】消去確定なのですよ。にぱ〜〜☆☆", 1] // レア演出
+    ];
+
+    // 重みに基づいたランダム選択ロジック
+    const totalWeight = msgList.reduce((sum, item) => sum + item[1], 0);
+    let randomNum = Math.random() * totalWeight;
+    let selectedMsg = "";
+
+    for (const [msg, weight] of msgList) {
+      if (randomNum < weight) {
+        selectedMsg = msg;
+        break;
+      }
+      randomNum -= weight;
+    }
+
+    if(confirm(selectedMsg)) { 
+      data = data.filter(x => x.id !== id); 
+      localStorage.setItem("umi_v17", JSON.stringify(data)); 
+      render(); 
+    } 
+  }
 
   function render() {
     const list = document.getElementById("logList");
