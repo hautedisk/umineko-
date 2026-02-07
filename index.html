@@ -5,66 +5,97 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>うみねこ2 収支・損得管理</title>
+  <title>うみねこ2 収支・データ管理</title>
   <link rel="apple-touch-icon" href="https://amusement-japan.co.jp/img/upload/20251202_1764661445.jpg">
   <link rel="icon" href="https://amusement-japan.co.jp/img/upload/20251202_1764661445.jpg">
   <style>
     :root { --p: #4a90e2; --s: #2ecc71; --d: #e74c3c; --bg: #f0f2f5; --gold: #d4af37; }
     body { font-family: sans-serif; padding: 8px; background: var(--bg); margin: 0; font-size: 13px; -webkit-tap-highlight-color: transparent; }
-    .card { background: white; padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 10px; box-sizing: border-box; }
+    .card { background: white; padding: 8px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 6px; box-sizing: border-box; }
     
-    #total { background: #333; color: white; padding: 12px; position: relative;}
+    #total { background: #333; color: white; padding: 10px; position: relative;}
     .tab-content { display: none; }
     .tab-content.active { display: block; }
-    .total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: center; }
-    .total-box { border: 1px solid #444; padding: 5px; border-radius: 8px; }
-    .total-label { font-size: 9px; color: #aaa; margin-bottom: 2px; display: block; }
-    .total-val { font-size: 18px; font-weight: bold; }
+    .total-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; text-align: center; }
+    .total-box { border: 1px solid #444; padding: 4px; border-radius: 6px; }
+    .total-label { font-size: 8px; color: #aaa; margin-bottom: 1px; display: block; }
+    .total-val { font-size: 16px; font-weight: bold; }
     
-    .benefit-area { border-top: 1px solid #444; margin-top: 10px; padding-top: 10px; text-align: left; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .b-item { font-size: 10px; line-height: 1.3; }
+    .benefit-area { 
+        border-top: 1px solid #444; 
+        margin-top: 8px; 
+        padding-top: 8px; 
+        text-align: center;
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 4px;
+    }
+    .b-item { 
+        font-size: 9px; 
+        line-height: 1.1; 
+        letter-spacing: -0.5px;
+    }
+    .t-gold, .t-red {
+        white-space: nowrap; 
+    }
+    
     .t-gold { color: var(--gold); font-weight: bold; }
     .t-red { color: #ff6b6b; font-weight: bold; }
+    .data-stats { font-size: 9px; color: #eee; margin-top: 6px; border-top: 1px solid #444; padding-top: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
 
-    .tab-menu { display: flex; gap: 10px; margin-bottom: 10px; }
-    .tab-btn { flex: 1; padding: 8px; background: #ddd; border: none; border-radius: 8px; font-size: 12px; cursor: pointer; text-align: center; color: #333;}
+    .tab-menu { display: flex; gap: 6px; margin-bottom: 6px; }
+    .tab-btn { flex: 1; padding: 6px; background: #ddd; border: none; border-radius: 6px; font-size: 11px; cursor: pointer; text-align: center; color: #333;}
     .tab-btn.active { background: var(--p); color: white; font-weight: bold; }
 
-    #graphContainer { width: 100%; height: 250px; position: relative; margin-top: 10px; }
+    #graphContainer { width: 100%; height: 250px; position: relative; margin-top: 6px; }
     canvas { width: 100%; height: 100%; }
 
-    .grid-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+    .grid-row { display: grid; gap: 4px; margin-bottom: 6px; }
+    .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .cols-2 { grid-template-columns: 1fr 1fr; }
     .item { display: flex; flex-direction: column; justify-content: flex-end; }
-    label { font-size: 9px; color: #666; font-weight: bold; margin-bottom: 3px; text-align: center; }
-    input { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; text-align: center; height: 36px; }
+    label { font-size: 8px; color: #666; font-weight: bold; margin-bottom: 1px; text-align: center; }
+    input { padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; width: 100%; box-sizing: border-box; text-align: center; height: 30px; }
     
-    .date-row { text-align: center; margin-bottom: 12px; }
-    #date { width: 65%; font-size: 13px; height: 34px; border: 1px solid #ccc; background: #fafafa; }
+    .date-row { text-align: center; margin-bottom: 8px; }
+    #date { width: 60%; font-size: 12px; height: 30px; border: 1px solid #ccc; background: #fafafa; }
 
-    .toggle-group { display: flex; background: #eee; border-radius: 6px; padding: 2px; margin-bottom: 3px; height: 20px; }
-    .toggle-btn { flex: 1; border: none; background: none; font-size: 9px; cursor: pointer; color: #666; height: 100%; border-radius: 4px; }
+    .toggle-group { display: flex; background: #eee; border-radius: 4px; padding: 1px; margin-bottom: 2px; height: 18px; }
+    .toggle-btn { flex: 1; border: none; background: none; font-size: 8px; cursor: pointer; color: #666; height: 100%; border-radius: 3px; }
     .toggle-btn.active { background: white; color: var(--p); font-weight: bold; }
 
-    button.main-btn { width: 100%; padding: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; background: var(--p); color: white; cursor: pointer; }
+    button.main-btn { width: 100%; padding: 10px; font-size: 14px; font-weight: bold; border: none; border-radius: 6px; background: var(--p); color: white; cursor: pointer; }
     .btn-edit-mode { background: var(--s) !important; }
 
-    .log-item { padding: 12px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
-    .date-text { font-size: 10px; color: #999; }
-    .val { font-weight: bold; font-size: 15px; }
-    .sub { font-size: 11px; color: #666; }
+    .log-item { padding: 6px; }
+    /* ★修正箇所：履歴のレイアウトを調整 */
+    .log-row { display: grid; grid-template-columns: 100px 1fr 60px; align-items: center; gap: 4px; }
+    
+    .log-left { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+    .date-box { font-size: 9px; color: #888; font-weight: bold; }
+    .val-container { text-align: left; }
+    .val-label { font-size: 7px; color: #666; display: block; margin-top: 1px;}
+    .val { font-weight: bold; font-size: 12px; display: block; line-height: 1.1; }
     .plus { color: var(--s); }
     .minus { color: var(--d); }
-    .tag { font-size: 8px; padding: 1px 4px; border-radius: 3px; margin-left: 4px; color: white; vertical-align: middle; }
-    .tag-save { background: var(--gold); }
-    .tag-cash { background: #888; }
-    .actions { display: flex; gap: 5px; margin-top: 5px; justify-content: flex-end; }
-    .btn-s { padding: 4px 8px; font-size: 10px; border-radius: 4px; color: white; border: none; cursor: pointer; }
+    
+    /* ★修正箇所：収支・ボーナス表示エリアを均等に調整 */
+    .log-center { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; align-items: center; }
+    .bonuses { display: flex; justify-content: space-around; background: #f9f9f9; padding: 4px; border-radius: 4px; border: 1px solid #eee; height: 34px;}
+    .b-item { text-align: center; width: 25px; }
+    .b-label { color: #555; font-size: 7px; display: block; font-weight: bold; }
+    .b-val { font-weight: bold; color: #000; font-size: 12px; display: block; }
+    .shop-box { font-size: 8px; color: #555; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 2px; border-top: 1px solid #eee; margin-top: 2px; }
+    
+    /* ★修正箇所：編集・削除ボタンを小さく */
+    .actions { display: flex; flex-direction: column; gap: 2px; }
+    .btn-s { padding: 4px 0; font-size: 9px; font-weight: bold; border-radius: 4px; color: white; border: none; cursor: pointer; }
 
     #customDialog { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; }
-    .dialog-card { background: white; width: 85%; padding: 24px; border-radius: 16px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-    #dialogMsg { font-size: 24px; font-weight: bold; color: #333; margin-bottom: 24px; line-height: 1.4; }
-    .dialog-btns { display: flex; gap: 12px; }
-    .dialog-btns button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 15px; font-weight: bold; }
+    .dialog-card { background: white; width: 80%; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+    #dialogMsg { font-size: 18px; font-weight: bold; color: #333; margin-bottom: 20px; line-height: 1.3; }
+    .dialog-btns { display: flex; gap: 10px; }
+    .dialog-btns button { flex: 1; padding: 10px; border-radius: 6px; border: none; font-size: 14px; font-weight: bold; }
     .btn-cancel { background: #eee; color: #666; }
     .btn-delete { background: var(--d); color: white; }
   </style>
@@ -86,7 +117,14 @@
       <div class="b-item"><div class="t-gold">貯メダルによる得 </div><div id="saveYen">0円</div><div id="saveCoin" style="color:#aaa">0枚</div></div>
       <div class="b-item"><div class="t-red">換金による損 </div><div id="lostYen">0円</div><div id="lostCoin" style="color:#aaa">0枚</div></div>
     </div>
-    <div style="font-size:10px; color:#888; margin-top:10px; border-top:1px solid #444; padding-top:5px;">ビタ率: <span id="totalVita" style="color:#fff">--%</span> / 回転: <span id="totalSpins" style="color:#fff">--</span></div>
+    <div class="data-stats">
+        <div>ビタ: <span id="totalVita" style="color:#fff">--%</span></div>
+        <div>回転: <span id="totalSpins" style="color:#fff">--</span></div>
+        <div>BB: <span id="totalBB" style="color:#fff">--</span></div>
+        <div>RB: <span id="totalRB" style="color:#fff">--</span></div>
+        <div>BB確: <span id="totalBBProb" style="color:#fff">--</span></div>
+        <div>RB確: <span id="totalRBProb" style="color:#fff">--</span></div>
+    </div>
   </div>
 
   <div id="tab-graph" class="tab-content">
@@ -99,12 +137,12 @@
 <div class="card">
   <input type="hidden" id="editId">
   <div class="date-row"><label>日付</label><br><input type="date" id="date"></div>
-  <div class="grid-row">
+  <div class="grid-row cols-3">
     <div class="item"><label>貸</label><input type="number" id="lend" value="46"></div>
     <div class="item"><label>払</label><input type="number" id="pay" value="50"></div>
     <div class="item"><label>回転数</label><input type="number" id="spins" placeholder="0"></div>
   </div>
-  <div class="grid-row">
+  <div class="grid-row cols-3">
     <div class="item">
       <div class="toggle-group"><button id="mInC" class="toggle-btn active" onclick="setIn('C')">枚数</button><button id="mInY" class="toggle-btn" onclick="setIn('Y')">金額</button></div>
       <input type="number" id="inV" placeholder="投資">
@@ -114,6 +152,14 @@
       <input type="number" id="outV" placeholder="回収枚数">
     </div>
     <div class="item"><label>ビタ成功/発生</label><div style="display:flex; gap:2px;"><input type="number" id="vS" placeholder="成"><input type="number" id="vA" placeholder="発"></div></div>
+  </div>
+  <div class="grid-row cols-2">
+    <div class="item"><label>BB回数</label><input type="number" id="bb" placeholder="0"></div>
+    <div class="item"><label>RB回数</label><input type="number" id="rb" placeholder="0"></div>
+  </div>
+  <div style="margin-bottom: 8px;">
+    <label>店名</label>
+    <input type="text" id="shopName" placeholder="店舗名">
   </div>
   <button id="submitBtn" class="main-btn" onclick="add()">記録を保存</button>
 </div>
@@ -132,8 +178,17 @@
 </div>
 
 <script>
-  const STORAGE_KEY = "umi_v15";
-  let data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  // データの引き継ぎ設定
+  const OLD_KEY = "umi_v15";
+  const NEW_KEY = "umi_v32";
+  
+  // 以前のデータがあれば読み込む
+  let data = JSON.parse(localStorage.getItem(NEW_KEY));
+  if (data === null) {
+      data = JSON.parse(localStorage.getItem(OLD_KEY) || "[]");
+      localStorage.setItem(NEW_KEY, JSON.stringify(data));
+  }
+  
   let inM = 'C', outM = 'CASH';
   document.getElementById("date").value = new Date().toISOString().split("T")[0];
 
@@ -179,11 +234,14 @@
       outY: outY_final, saveBC, saveBY, lostBC, lostBY, outM, inM, 
       spins: Number(document.getElementById("spins").value) || 0, 
       vA: Number(document.getElementById("vA").value) || 0, 
-      vS: Number(document.getElementById("vS").value) || 0 
+      vS: Number(document.getElementById("vS").value) || 0,
+      shopName: document.getElementById("shopName").value,
+      bb: Number(document.getElementById("bb").value) || 0,
+      rb: Number(document.getElementById("rb").value) || 0
     };
     
     if (id) { data[data.findIndex(x => x.id === Number(id))] = rec; } else { data.push(rec); }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(NEW_KEY, JSON.stringify(data));
     location.reload();
   }
 
@@ -194,6 +252,9 @@
     document.getElementById("lend").value = x.lend; document.getElementById("pay").value = x.pay;
     document.getElementById("outV").value = x.outC; document.getElementById("spins").value = x.spins;
     document.getElementById("vA").value = x.vA; document.getElementById("vS").value = x.vS;
+    document.getElementById("shopName").value = x.shopName || "";
+    document.getElementById("bb").value = x.bb || 0;
+    document.getElementById("rb").value = x.rb || 0;
     setIn(x.inM || 'C'); setOut(x.outM || 'CASH');
     document.getElementById("inV").value = x.inM === 'Y' ? x.inY : x.inC;
     document.getElementById("submitBtn").innerText = "修正反映";
@@ -219,13 +280,13 @@
     document.getElementById("customDialog").style.display = "flex";
     document.getElementById("confirmDeleteBtn").onclick = () => {
       data = data.filter(x => x.id !== deleteId);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      localStorage.setItem(NEW_KEY, JSON.stringify(data));
       location.reload();
     };
   }
   function closeDialog() { document.getElementById("customDialog").style.display = "none"; }
 
-  // グラフ描画ロジック（最大・最小ライン追加版）
+  // グラフ描画ロジック（グネグネ）
   function drawGraph() {
     const canvas = document.getElementById('slopeGraph');
     const ctx = canvas.getContext('2d');
@@ -242,40 +303,53 @@
     ctx.clearRect(0, 0, width, height);
     if (data.length === 0) return;
 
+    // 日付順に並べ替え
     const sortedData = [...data].sort((a,b) => new Date(a.date) - new Date(b.date));
     
     let cumulativeCoins = 0;
-    let points = [{x: 0, y: 0}];
     let currentSpin = 0;
-    let maxCoins = 0;
-    let minCoins = 0;
+    
+    // グラフのデータポイント
+    let points = [{x: 0, y: 0}];
+    let recordPoints = [{x: 0, y: 0}]; // 実際の記録ポイント
 
     sortedData.forEach(x => {
       let dailyDiff = x.outC - x.inC;
-      let steps = Math.max(3, Math.floor(x.spins / 100)); 
-      for (let i = 1; i <= steps; i++) {
-        let progress = i / steps;
-        let noise = (Math.random() - 0.5) * (Math.abs(dailyDiff) * 0.4) * (1 - Math.abs(progress - 0.5));
-        let y = cumulativeCoins + (dailyDiff * progress) + noise;
-        
-        points.push({
-          x: currentSpin + (x.spins * progress),
-          y: y
-        });
-        
-        // 最大・最小の更新
-        if (y > maxCoins) maxCoins = y;
-        if (y < minCoins) minCoins = y;
-      }
       cumulativeCoins += dailyDiff;
       currentSpin += x.spins;
+      
+      // 記録ポイントは直線用
+      recordPoints.push({x: currentSpin, y: cumulativeCoins});
+      
+      // グネグネ用ポイント（日ごとに乱数を発生）
+      let steps = Math.max(2, Math.floor(x.spins / 200));
+      let lastPoint = points[points.length - 1];
+      
+      // シード値を日付から生成（再描画しても同じグネグネになる）
+      let seed = x.date.split('-').join('') * 1;
+      const pseudoRandom = () => {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+
+      for(let i = 1; i <= steps; i++){
+        let progress = i / steps;
+        let noise = (pseudoRandom() - 0.5) * (Math.abs(dailyDiff) * 0.3);
+        // 端点は記録と一致させる
+        if(i === steps) noise = 0;
+        
+        points.push({
+            x: lastPoint.x + (x.spins * progress),
+            y: lastPoint.y + (dailyDiff * progress) + noise
+        });
+      }
     });
 
-    let yValues = points.map(p => p.y);
-    let minDiff = Math.min(...yValues, minCoins, 0);
-    let maxDiff = Math.max(...yValues, maxCoins, 0);
+    // グラフの範囲計算（実際の記録ベース）
+    let yValues = recordPoints.map(p => p.y);
+    let minDiff = Math.min(...yValues, 0);
+    let maxDiff = Math.max(...yValues, 0);
     
-    // 範囲を100単位で切り上げ・切り下げ
     minDiff = Math.floor(minDiff / 100) * 100;
     maxDiff = Math.ceil(maxDiff / 100) * 100;
     
@@ -288,10 +362,10 @@
     const chartWidth = width - margin.left - margin.right;
     const chartHeight = height - margin.top - margin.bottom;
 
-    const getX = (x) => margin.left + (x / currentSpin) * chartWidth;
+    const getX = (x) => margin.left + (currentSpin === 0 ? 0 : (x / currentSpin) * chartWidth);
     const getY = (y) => margin.top + chartHeight - ((y - minDiff) / yRange) * chartHeight;
 
-    // --- 背景・グリッド ---
+    // 背景・グリッド
     ctx.strokeStyle = '#eee';
     ctx.lineWidth = 1;
     
@@ -302,12 +376,10 @@
     for(let yVal = startTick; yVal <= maxDiff; yVal += tickInterval) {
         let yPos = getY(yVal);
         if (yPos < margin.top || yPos > height - margin.bottom) continue;
-
         ctx.beginPath();
         ctx.moveTo(margin.left, yPos);
         ctx.lineTo(width - margin.right, yPos);
         ctx.stroke();
-        
         ctx.fillStyle = '#888';
         ctx.font = '10px sans-serif';
         ctx.textAlign = 'right';
@@ -315,10 +387,11 @@
     }
     
     ctx.textAlign = 'center';
+    ctx.fillStyle = '#333';
     ctx.fillText("0", getX(0), height - 10);
     ctx.fillText(currentSpin.toLocaleString(), getX(currentSpin), height - 10);
 
-    // --- ゼロライン ---
+    // ゼロライン
     ctx.beginPath();
     ctx.strokeStyle = '#999';
     ctx.lineWidth = 2;
@@ -326,33 +399,35 @@
     ctx.lineTo(width - margin.right, getY(0));
     ctx.stroke();
 
-    // --- 最大・最小ラインの描画 ---
+    // 実際の記録に基づいた最大・最小ライン
     const drawLimitLine = (val, color, label, isTop) => {
         const yPos = getY(val);
         ctx.beginPath();
         ctx.strokeStyle = color;
         ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]); // 破線
+        ctx.setLineDash([4, 4]);
         ctx.moveTo(margin.left, yPos);
         ctx.lineTo(width - margin.right, yPos);
         ctx.stroke();
-        ctx.setLineDash([]); // 実線に戻す
-        
+        ctx.setLineDash([]);
         ctx.fillStyle = color;
-        ctx.font = '10px sans-serif';
+        ctx.font = 'bold 10px sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(`${label}: ${Math.round(val)}`, margin.left + 5, yPos + (isTop ? -5 : 12));
     };
+    
+    const actualMax = Math.max(...yValues);
+    const actualMin = Math.min(...yValues);
+    if (actualMax > 0) drawLimitLine(actualMax, '#d4af37', '最高', true);
+    if (actualMin < 0) drawLimitLine(actualMin, '#e74c3c', '最低', false);
 
-    if (maxCoins > 0) drawLimitLine(maxCoins, '#d4af37', '最大枚数', true);
-    if (minCoins < 0) drawLimitLine(minCoins, '#e74c3c', '最低枚数', false);
-
-    // --- グラフ本体（ウネウネライン） ---
+    // グラフ本体（グネグネ）
     ctx.beginPath();
-    ctx.strokeStyle = '#2ecc71';
+    ctx.strokeStyle = '#4a90e2';
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
+    
     points.forEach((p, i) => {
       if (i === 0) ctx.moveTo(getX(p.x), getY(p.y));
       else ctx.lineTo(getX(p.x), getY(p.y));
@@ -364,32 +439,52 @@
     const list = document.getElementById("logList");
     list.innerHTML = "";
     let tY_raw = 0, tC = 0, tSp = 0, tA = 0, tS = 0, tSaveY = 0, tLostY = 0, tSaveC = 0, tLostC = 0;
-    
-    const sortedLog = [...data].sort((a,b) => new Date(b.date) - new Date(a.date));
+    let tBB = 0, tRB = 0;
 
+    const sortedLog = [...data].sort((a,b) => new Date(b.date) - new Date(a.date));
     sortedLog.forEach(x => {
       const dY_500 = Math.floor((x.outY - x.inY) / 500) * 500;
       const dC = x.outC - x.inC;
       tY_raw += (x.outY - x.inY); tC += dC; tSp += x.spins; tA += x.vA; tS += x.vS;
+      tSaveY += (x.saveBY || 0); tLostY += (x.lostBY || 0); tSaveC += (x.saveBC || 0); tLostC += (x.lostBC || 0);
+      tBB += (x.bb || 0); tRB += (x.rb || 0);
       
-      tSaveY += (x.saveBY || 0); 
-      tLostY += (x.lostBY || 0); 
-      tSaveC += (x.saveBC || 0); 
-      tLostC += (x.lostBC || 0);
-      
-      const rate = x.vA > 0 ? ((x.vS / x.vA) * 100).toFixed(1) : "0.0";
-      const tag = x.outM === 'SAVE' ? '<span class="tag tag-save">貯メ</span>' : '<span class="tag tag-cash">換金</span>';
+      const totalB = (x.bb||0)+(x.rb||0);
+
       list.innerHTML += `<div class="card log-item">
-          <div><div class="date-text">${x.date}${tag}</div><div class="val ${dY_500 >= 0 ? 'plus' : 'minus'}">${dY_500.toLocaleString()}円</div><div class="sub">差枚: ${Math.round(dC).toLocaleString()}枚</div></div>
-          <div style="text-align:right"><div class="sub">ビタ ${rate}%</div><div class="actions"><button class="btn-s" style="background:var(--s)" onclick="edit(${x.id})">編集</button><button class="btn-s" style="background:var(--d)" onclick="remove(${x.id})">削除</button></div></div>
+          <div class="log-row">
+            <div class="log-left">
+                <div class="date-box">${x.date}</div>
+                <div class="val-container">
+                    <span class="val-label">収支</span>
+                    <span class="val ${dY_500 >= 0 ? 'plus' : 'minus'}">${dY_500.toLocaleString()}円</span>
+                    <span class="val-label">差枚</span>
+                    <span class="val" style="color:#333;font-size:11px;font-weight:normal;">${dC >= 0 ? '+' : ''}${Math.round(dC).toLocaleString()}枚</span>
+                </div>
+            </div>
+            
+            <div class="log-center">
+                <div class="bonuses">
+                    <div class="b-item"><span class="b-label">BB</span><span class="b-val">${x.bb||0}</span></div>
+                    <div class="b-item"><span class="b-label">RB</span><span class="b-val">${x.rb||0}</span></div>
+                    <div class="b-item"><span class="b-label">合算</span><span class="b-val">${totalB}</span></div>
+                </div>
+                <div class="shop-box">${x.shopName || '-'}</div>
+            </div>
+
+            <div class="actions">
+                <button class="btn-s" style="background:var(--s)" onclick="edit(${x.id})">編集</button>
+                <button class="btn-s" style="background:var(--d)" onclick="remove(${x.id})">削除</button>
+            </div>
+          </div>
         </div>`;
     });
     
+    // 累計データ計算
     const tY_final = Math.floor(tY_raw / 500) * 500;
     document.getElementById("totalYen").innerText = tY_final.toLocaleString() + "円";
     document.getElementById("totalYen").className = "total-val " + (tY_final >= 0 ? "plus" : "minus");
     document.getElementById("totalCoins").innerText = (tC >= 0 ? "+" : "") + Math.round(tC).toLocaleString() + "枚";
-    
     document.getElementById("saveYen").innerText = Math.round(tSaveY).toLocaleString() + "円";
     document.getElementById("saveCoin").innerText = tSaveC + "枚";
     document.getElementById("lostYen").innerText = Math.round(tLostY).toLocaleString() + "円";
@@ -397,6 +492,15 @@
     
     document.getElementById("totalSpins").innerText = tSp.toLocaleString();
     document.getElementById("totalVita").innerText = (tA > 0 ? (tS/tA*100).toFixed(1) : 0) + "%";
+    document.getElementById("totalBB").innerText = tBB;
+    document.getElementById("totalRB").innerText = tRB;
+    const bbProb = tBB > 0 ? (tSp / tBB).toFixed(1) : "0.0";
+    const rbProb = tRB > 0 ? (tSp / tRB).toFixed(1) : "0.0";
+    document.getElementById("totalBBProb").innerText = "1/" + bbProb;
+    document.getElementById("totalRBProb").innerText = "1/" + rbProb;
+    
+    // グラフ描画（再計算）
+    drawGraph();
   }
   render();
 </script>
