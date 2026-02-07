@@ -67,7 +67,15 @@
     button.main-btn { width: 100%; padding: 10px; font-size: 14px; font-weight: bold; border: none; border-radius: 6px; background: var(--p); color: white; cursor: pointer; }
     .btn-edit-mode { background: var(--s) !important; }
 
-    .log-item { padding: 6px; }
+    /* ★修正箇所：履歴コンテナをスクロール可能にする */
+    #logContainer {
+        max-height: 400px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-right: 4px;
+    }
+    
+    .log-item { padding: 6px; margin-bottom: 6px; }
     .log-row { display: grid; grid-template-columns: 85px 1fr; align-items: center; gap: 6px; }
     
     .log-left { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
@@ -78,16 +86,13 @@
     .plus { color: var(--s); }
     .minus { color: var(--d); }
     
-    /* ★修正箇所：レイアウト調整 */
     .log-center { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 0; }
     
-    /* ボーナスエリアを広げる */
     .bonuses { display: flex; justify-content: space-between; background: #f9f9f9; padding: 2px 4px; border-radius: 4px; border: 1px solid #eee; }
     .b-item { text-align: center; flex: 1; }
     .b-label { color: #555; font-size: 8px; display: block; font-weight: bold; }
     .b-val { font-weight: bold; color: #000; font-size: 12px; display: block; }
     
-    /* 店名を小さく */
     .shop-box { font-size: 8px; color: #666; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
     
     .actions { display: flex; gap: 4px; margin-top: 4px; }
@@ -167,7 +172,9 @@
 </div>
 
 <h3>履歴</h3>
-<div id="logList"></div>
+<div id="logContainer">
+    <div id="logList"></div>
+</div>
 
 <div id="customDialog">
   <div class="dialog-card">
